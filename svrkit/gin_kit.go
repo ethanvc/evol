@@ -29,6 +29,9 @@ func (kit *GinKit) Handlers(handler InterceptorFunc) gin.HandlerFunc {
 	interceptors = append(interceptors, handler)
 	nexter := NewNexter(interceptors...)
 	return func(c *gin.Context) {
-		nexter.Next(c.Request.Context(), nil)
+		ctx, req := WithHttpRequestContext(c.Request.Context())
+		req.Request = c.Request
+		req.Writer = c.Writer
+		nexter.Next(ctx, nil)
 	}
 }
