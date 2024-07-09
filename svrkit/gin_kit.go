@@ -13,6 +13,14 @@ func NewGinKit() *GinKit {
 	return &GinKit{}
 }
 
+func (kit *GinKit) Clone(fn ...InterceptorFunc) *GinKit {
+	newKit := &GinKit{
+		interceptors: slices.Clone(kit.interceptors),
+	}
+	newKit.interceptors = append(newKit.interceptors, fn...)
+	return newKit
+}
+
 func (kit *GinKit) Handlers(handler InterceptorFunc) gin.HandlerFunc {
 	if handler == nil {
 		panic("handler must not be nil")

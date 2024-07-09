@@ -1,4 +1,4 @@
-module github.com/ethanvc/evol.git
+module github.com/ethanvc/evol
 
 go 1.22
 
