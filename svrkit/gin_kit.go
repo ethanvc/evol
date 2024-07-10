@@ -30,7 +30,9 @@ func (kit *GinKit) Handlers(handler InterceptorFunc) gin.HandlerFunc {
 	nexter := NewNexter(interceptors...)
 	return func(c *gin.Context) {
 		ctx, req := WithHttpRequestContext(c.Request.Context())
+		req.Pattern = c.FullPath()
 		req.Request = c.Request
+		req.PathParams = c.Params
 		req.Writer = c.Writer
 		nexter.Next(ctx, nil)
 	}

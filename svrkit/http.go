@@ -2,13 +2,15 @@ package svrkit
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type HttpRequestContext struct {
-	Pattern string
-	Request *http.Request
-	Writer  http.ResponseWriter
+	Pattern    string
+	Request    *http.Request
+	PathParams gin.Params
+	Writer     http.ResponseWriter
 }
 
 type contextKeyHttpRequestContext struct{}
