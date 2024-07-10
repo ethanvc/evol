@@ -1,4 +1,4 @@
-package obs
+package xlog
 
 import (
 	"context"
@@ -21,4 +21,23 @@ func WithLogContext(c context.Context, method string) context.Context {
 func GetLogContext(c context.Context) *LogContext {
 	lc, _ := c.Value(contextKeyLogContext{}).(*LogContext)
 	return lc
+}
+
+func (lc *LogContext) GetMethod() string {
+	if lc == nil {
+		return "Global"
+	}
+	lc.mux.Lock()
+	defer lc.mux.Unlock()
+	return lc.method
+}
+
+func (lc *LogContext) GetStartTime() time.Time {
+	if lc == nil {
+		return time.Now()
+	}
+	lc.mux.Lock()
+	defer lc.mux.Unlock()
+	return lc.startTime
+
 }
