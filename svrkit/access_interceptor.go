@@ -10,10 +10,14 @@ import (
 type AccessInterceptor struct {
 }
 
+func NewAccessInterceptor() *AccessInterceptor {
+	return &AccessInterceptor{}
+}
+
 func (interceptor *AccessInterceptor) Intercept(c context.Context, req any, nexter Nexter) (any, error) {
 	info, c := WithAccessInfo(c)
 	resp, err := nexter.Next(c, nil)
-	xlog.GetAccessLogger().Log(c, 0, err, info.req, info.resp, info.extra...)
+	xlog.GetAccessLogger().LogAccess(c, 0, err, info.req, info.resp, info.extra...)
 	return resp, err
 }
 
