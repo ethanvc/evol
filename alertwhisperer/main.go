@@ -58,15 +58,15 @@ func NewHttpServer(lc fx.Lifecycle, param NewHttpServerParam) *gin.Engine {
 }
 
 func registerControllers(engine *gin.Engine, param NewHttpServerParam) {
-	kit := svrkit.NewGinKit()
-	kit.AddInterceptor(
+	var interceptors []svrkit.InterceptorFunc
+	interceptors = append(interceptors,
 		svrkit.NewAccessInterceptor().Intercept,
 		svrkit.NewHttpDecoder().Intercept,
 	)
 	{
 		controller := param.AlertRule
 		r := engine.Group("/api/alert-rule/")
-		r.POST("/create", kit.Handlers(controller.CreateAlertRule))
+		r.POST("/create", svrkit.NewGinChain(interceptors, controller.CreateAlertRule))
 	}
 }
 
