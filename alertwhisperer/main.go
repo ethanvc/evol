@@ -61,6 +61,7 @@ func registerControllers(engine *gin.Engine, param NewHttpServerParam) {
 	var interceptors []svrkit.InterceptorFunc
 	interceptors = append(interceptors,
 		svrkit.NewAccessInterceptor().Intercept,
+		svrkit.NewHttpEncoder().Intercept,
 		svrkit.NewHttpDecoder().Intercept,
 	)
 	{

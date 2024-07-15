@@ -31,6 +31,7 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 	if err != nil {
 		return nil, err
 	}
+	GetAccessInfo(c).SetReq(content)
 	req = nexter.Chain().NewReq()
 	err = json.Unmarshal(content, req)
 	if err != nil {

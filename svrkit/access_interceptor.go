@@ -17,7 +17,7 @@ func NewAccessInterceptor() *AccessInterceptor {
 func (interceptor *AccessInterceptor) Intercept(c context.Context, req any, nexter Nexter) (any, error) {
 	info, c := WithAccessInfo(c)
 	resp, err := nexter.Next(c, nil)
-	xlog.GetAccessLogger().LogAccess(c, 0, err, info.req, info.resp, info.extra...)
+	xlog.GetAccessLogger().LogAccess(c, 0, err, info.req, info.resp)
 	return resp, err
 }
 
@@ -29,9 +29,32 @@ func WithAccessInfo(c context.Context) (*AccessInfo, context.Context) {
 	return info, c
 }
 
+func GetAccessInfo(c context.Context) *AccessInfo {
+	info, _ := c.Value(contextKeyAccessInfo{}).(*AccessInfo)
+	return info
+}
+
 type AccessInfo struct {
 	mux   sync.Mutex
 	req   any
 	resp  any
-	extra []any
+	extra map[string]any
+}
+
+func (info *AccessInfo) SetReq(req any) {
+	if info == nil {
+		return
+	}
+	info.mux.Lock()
+	defer info.mux.Unlock()
+	info.req = req
+}
+
+func (info *AccessInfo) SetResp(resp any) {
+	if info == nil {
+		return
+	}
+	info.mux.Lock()
+	defer info.mux.Unlock()
+	info.resp = resp
 }

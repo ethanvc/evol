@@ -2,8 +2,6 @@ package controller
 
 import (
 	"context"
-	"github.com/ethanvc/evol/base"
-	"google.golang.org/grpc/codes"
 )
 
 type AlertRuleController struct{}
@@ -17,5 +15,7 @@ type AlertRule struct {
 }
 
 func (controller *AlertRuleController) CreateAlertRule(c context.Context, req *AlertRule) (*AlertRule, error) {
-	return nil, base.New(codes.Unimplemented, "")
+	return &AlertRule{
+		AlertRuleId: 1,
+	}, nil
 }
