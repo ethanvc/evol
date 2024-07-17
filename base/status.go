@@ -61,3 +61,14 @@ func (s *Status) Error() string {
 	}
 	return buf.String()
 }
+
+func Code(err error) codes.Code {
+	if err == nil {
+		return codes.OK
+	}
+	status, ok := err.(*Status)
+	if !ok {
+		return codes.Unknown
+	}
+	return status.GetCode()
+}

@@ -3,6 +3,7 @@ package xlog
 import (
 	"context"
 	"github.com/ethanvc/evol/base"
+	"google.golang.org/grpc/codes"
 	"log/slog"
 	"time"
 )
@@ -18,7 +19,7 @@ func NewAccessLogger(conf *AccessLoggerConfig) *AccessLogger {
 	return al
 }
 
-var accessLogger *AccessLogger
+var accessLogger *AccessLogger = NewAccessLogger(NewDefaultAccessLoggerConfig())
 
 func GetAccessLogger() *AccessLogger {
 	return accessLogger
@@ -59,4 +60,18 @@ const (
 
 type AccessLoggerConfig struct {
 	GetLogLevel func(err error) slog.Level
+}
+
+func NewDefaultAccessLoggerConfig() *AccessLoggerConfig {
+	return &AccessLoggerConfig{
+		GetLogLevel: func(err error) slog.Level {
+			switch base.Code(err) {
+			case codes.Canceled, codes.Unknown, codes.DeadlineExceeded,
+				codes.ResourceExhausted, codes.Aborted, codes.Internal, codes.Unavailable:
+				return slog.LevelError
+			default:
+				return slog.LevelInfo
+			}
+		},
+	}
 }
