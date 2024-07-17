@@ -58,3 +58,16 @@ func (info *AccessInfo) SetResp(resp any) {
 	defer info.mux.Unlock()
 	info.resp = resp
 }
+
+func (info *AccessInfo) SetExtra(key string, value any) {
+	if info == nil || key == "" || value == nil {
+		return
+	}
+	info.mux.Lock()
+	defer info.mux.Unlock()
+	const maxAllowedExtra = 10
+	if len(info.extra) > maxAllowedExtra {
+		return
+	}
+	info.extra[key] = value
+}
