@@ -2,32 +2,23 @@ package controller
 
 import (
 	"context"
-	"github.com/ethanvc/evol/alertwhisperer/repo"
+	"github.com/ethanvc/evol/alertwhisperer/domain"
 )
 
 type AlertRuleController struct {
-	alertRuleRepo *repo.AlertRuleRepository
+	alertRuleRepo *domain.AlertRuleRepository
 }
 
-func NewAlertRuleController(alertRuleRepo *repo.AlertRuleRepository) *AlertRuleController {
+func NewAlertRuleController(alertRuleRepo *domain.AlertRuleRepository) *AlertRuleController {
 	return &AlertRuleController{
 		alertRuleRepo: alertRuleRepo,
 	}
 }
 
-type AlertRule struct {
-	AlertRuleId     int64   `json:"alert_rule_id"`
-	Name            string  `json:"name"`
-	Rule            string  `json:"rule"`
-	Version         int     `json:"version"`
-	CreateTime      int64   `json:"create_time"`
-	UpdateTime      int64   `json:"update_time"`
-	Threshold       float64 `json:"threshold"`
-	DurationSeconds int64   `json:"duration_seconds"`
-}
-
-func (controller *AlertRuleController) CreateAlertRule(c context.Context, req *AlertRule) (*AlertRule, error) {
-	return &AlertRule{
-		AlertRuleId: 1,
-	}, nil
+func (controller *AlertRuleController) CreateAlertRule(c context.Context, req *domain.AlertRule) (*domain.AlertRule, error) {
+	err := controller.alertRuleRepo.Create(c, req)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
 }

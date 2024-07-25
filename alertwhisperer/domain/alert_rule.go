@@ -1,6 +1,9 @@
-package repo
+package domain
 
-import "gorm.io/gorm"
+import (
+	"context"
+	"gorm.io/gorm"
+)
 
 type AlertRule struct {
 	AlertRuleId     int64   `json:"alert_rule_id" gorm:"primaryKey;autoIncrement"`
@@ -25,4 +28,12 @@ func NewAlertRuleRepository(db *gorm.DB) *AlertRuleRepository {
 	return &AlertRuleRepository{
 		db: db,
 	}
+}
+
+func (repo *AlertRuleRepository) Create(c context.Context, rule *AlertRule) error {
+	err := repo.db.WithContext(c).Create(rule).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

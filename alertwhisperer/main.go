@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ethanvc/evol/alertwhisperer/controller"
-	"github.com/ethanvc/evol/alertwhisperer/repo"
 	"github.com/ethanvc/evol/svrkit"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
@@ -22,7 +21,7 @@ func main() {
 		fx.Provide(NewDatabase),
 		fx.Provide(controller.NewAlertRuleController),
 		fx.Provide(NewHttpServer),
-		fx.Provide(repo.NewAlertRuleRepository),
+		fx.Provide(domain.NewAlertRuleRepository),
 		fx.Invoke(func(engine *gin.Engine) {}),
 	)
 	app.Run()
@@ -113,7 +112,7 @@ func NewDatabase(conf *Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = db.AutoMigrate(&repo.AlertRule{}); err != nil {
+	if err = db.AutoMigrate(&domain.AlertRule{}); err != nil {
 		return nil, err
 	}
 	return db, nil
