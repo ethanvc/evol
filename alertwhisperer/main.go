@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ethanvc/evol/alertwhisperer/controller"
+	"github.com/ethanvc/evol/alertwhisperer/domain"
 	"github.com/ethanvc/evol/svrkit"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
