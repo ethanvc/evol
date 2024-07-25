@@ -2,12 +2,17 @@ package controller
 
 import (
 	"context"
+	"github.com/ethanvc/evol/alertwhisperer/repo"
 )
 
-type AlertRuleController struct{}
+type AlertRuleController struct {
+	alertRuleRepo *repo.AlertRuleRepository
+}
 
-func NewAlertRuleController() *AlertRuleController {
-	return &AlertRuleController{}
+func NewAlertRuleController(alertRuleRepo *repo.AlertRuleRepository) *AlertRuleController {
+	return &AlertRuleController{
+		alertRuleRepo: alertRuleRepo,
+	}
 }
 
 type AlertRule struct {
