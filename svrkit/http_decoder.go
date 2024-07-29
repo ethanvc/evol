@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/ethanvc/evol/base"
+	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
 	"io"
 )
@@ -35,7 +36,7 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 	req = nexter.Chain().NewReq()
 	err = json.Unmarshal(content, req)
 	if err != nil {
-		return nil, err
+		return nil, xlog.New(c, err).Error()
 	}
 	return nexter.Next(c, req)
 }
