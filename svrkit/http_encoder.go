@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/ethanvc/evol/base"
+	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
 )
 
@@ -19,7 +20,9 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	if httpReq == nil {
 		return nil, base.New(codes.Internal, "HttpEncoderMustUsedWithHttpProtocol")
 	}
+	statusErr := e.convertToStatus(c, err)
 	var httpResp HttpResponse
+	httpResp.Code = statusErr.GetCode()
 	httpResp.Data = resp
 	content, err := json.Marshal(httpResp)
 	if err != nil {
@@ -34,6 +37,16 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 		return nil, base.New(codes.Unknown, "WriteContentPartial")
 	}
 	return resp, nil
+}
+
+func (e *HttpEncoder) convertToStatus(c context.Context, err error) *base.Status {
+	if err == nil {
+		return nil
+	}
+	if s, ok := err.(*base.Status); ok {
+		return s
+	}
+	return xlog.New(c, err).Status()
 }
 
 type HttpResponse struct {

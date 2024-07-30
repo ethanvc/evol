@@ -25,6 +25,13 @@ func New(c context.Context, err error) *Composer {
 }
 
 func (com *Composer) convertToStatus() {
+	if com.originErr == nil {
+		return
+	}
+	if s, ok := com.originErr.(*base.Status); ok {
+		com.s = s
+		return
+	}
 	event := ConvertToEventString(com.originErr.Error(), 80) + ";" + GetStackPosition(2)
 	com.s = base.New(codes.Internal, event).SetMsg(com.originErr.Error())
 }
@@ -37,5 +44,9 @@ func (com *Composer) Error() error {
 	if com.s == nil {
 		return nil
 	}
+	return com.s
+}
+
+func (com *Composer) Status() *base.Status {
 	return com.s
 }
