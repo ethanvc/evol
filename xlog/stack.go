@@ -32,6 +32,13 @@ func GetFilePathTailPart(filePath string, count int) string {
 	return filePath
 }
 
+func GetStackPosition(skip int) string {
+	pc := GetCaller(skip + 1)
+	frame := GetCallerFrame(pc)
+	f := GetFilePathTailPart(frame.File, 2)
+	return fmt.Sprintf("%s:%d", f, frame.Line)
+}
+
 // GetPanicReportEvent only call this function in recover code
 func GetPanicReportEvent(skip int, r any) string {
 	var errStr string
