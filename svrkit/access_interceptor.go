@@ -2,12 +2,14 @@ package svrkit
 
 import (
 	"context"
-	"github.com/ethanvc/evol/xlog"
 	"sync"
+
+	"github.com/ethanvc/evol/xlog"
 )
 
 // AccessInterceptor please make me the first interceptor to cover all report and monitor scene.
 type AccessInterceptor struct {
+	GenerateContext func(c context.Context) context.Context
 }
 
 func NewAccessInterceptor() *AccessInterceptor {
@@ -15,10 +17,18 @@ func NewAccessInterceptor() *AccessInterceptor {
 }
 
 func (interceptor *AccessInterceptor) Intercept(c context.Context, req any, nexter Nexter) (any, error) {
+	c = interceptor.generateContext(c)
 	info, c := WithAccessInfo(c)
 	resp, err := nexter.Next(c, nil)
 	xlog.GetAccessLogger().LogAccess(c, 0, err, info.req, info.resp)
 	return resp, err
+}
+
+func (interceptor *AccessInterceptor) generateContext(c context.Context) context.Context {
+	if interceptor.GenerateContext == nil {
+		return c
+	}
+	return interceptor.GenerateContext(c)
 }
 
 type contextKeyAccessInfo struct{}
@@ -70,4 +80,12 @@ func (info *AccessInfo) SetExtra(key string, value any) {
 		return
 	}
 	info.extra[key] = value
+}
+
+func GenerateHttpContext(c context.Context) context.Context {
+	httpCtx := GetHttpRequestContext(c)
+	if httpCtx == nil {
+		return nil
+	}
+	return xlog.WithLogContext(c, httpCtx.Pattern)
 }

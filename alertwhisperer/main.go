@@ -4,6 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
+	"os"
+
 	"github.com/BurntSushi/toml"
 	"github.com/ethanvc/evol/alertwhisperer/controller"
 	"github.com/ethanvc/evol/alertwhisperer/domain"
@@ -12,8 +15,6 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"net"
-	"os"
 )
 
 func main() {
@@ -61,8 +62,10 @@ func NewHttpServer(lc fx.Lifecycle, param NewHttpServerParam) *gin.Engine {
 
 func registerControllers(engine *gin.Engine, param NewHttpServerParam) {
 	var interceptors []svrkit.InterceptorFunc
+	accInt := svrkit.NewAccessInterceptor()
+	accInt.GenerateContext = svrkit.GenerateHttpContext
 	interceptors = append(interceptors,
-		svrkit.NewAccessInterceptor().Intercept,
+		accInt.Intercept,
 		svrkit.NewHttpEncoder().Intercept,
 		svrkit.NewHttpDecoder().Intercept,
 	)

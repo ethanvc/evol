@@ -15,7 +15,10 @@ type LogContext struct {
 type contextKeyLogContext struct{}
 
 func WithLogContext(c context.Context, method string) context.Context {
-	return context.WithValue(c, contextKeyLogContext{}, &LogContext{})
+	logCtx := &LogContext{
+		method: method,
+	}
+	return context.WithValue(c, contextKeyLogContext{}, logCtx)
 }
 
 func GetLogContext(c context.Context) *LogContext {
