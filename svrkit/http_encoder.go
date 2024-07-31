@@ -3,6 +3,7 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
@@ -23,6 +24,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	statusErr := e.convertToStatus(c, err)
 	var httpResp HttpResponse
 	httpResp.Code = statusErr.GetCode()
+	httpResp.Msg = statusErr.GetMsg()
 	httpResp.Data = resp
 	content, err := json.Marshal(httpResp)
 	if err != nil {
@@ -51,5 +53,6 @@ func (e *HttpEncoder) convertToStatus(c context.Context, err error) *base.Status
 
 type HttpResponse struct {
 	Code codes.Code `json:"code"`
+	Msg  string     `json:"msg"`
 	Data any        `json:"data"`
 }

@@ -3,10 +3,11 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
+	"io"
+
 	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
-	"io"
 )
 
 type HttpDecoder struct {
@@ -32,8 +33,11 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 	if err != nil {
 		return nil, err
 	}
-	GetAccessInfo(c).SetReq(content)
 	req = nexter.Chain().NewReq()
+	if len(content) == 0 {
+		return nexter.Next(c, req)
+	}
+	GetAccessInfo(c).SetReq(content)
 	err = json.Unmarshal(content, req)
 	if err != nil {
 		return nil, xlog.New(c, err).Error()
