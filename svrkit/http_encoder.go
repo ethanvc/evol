@@ -31,6 +31,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 		return nil, base.New(codes.Internal, "MarshalHttpResponseError")
 	}
 	GetAccessInfo(c).SetResp(content)
+	httpReq.Writer.Header().Set("Content-Type", "application/json")
 	n, err := httpReq.Writer.Write(content)
 	if err != nil {
 		return nil, base.New(codes.Unknown, "WriteHttpResponseError")
