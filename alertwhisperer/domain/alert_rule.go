@@ -2,6 +2,10 @@ package domain
 
 import (
 	"context"
+	"github.com/VividCortex/mysqlerr"
+	"github.com/ethanvc/evol/base"
+	"github.com/go-sql-driver/mysql"
+	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )
 
@@ -33,6 +37,12 @@ func NewAlertRuleRepository(db *gorm.DB) *AlertRuleRepository {
 func (repo *AlertRuleRepository) Create(c context.Context, rule *AlertRule) error {
 	err := repo.db.WithContext(c).Create(rule).Error
 	if err != nil {
+		switch realErr := err.(type) {
+		case *mysql.MySQLError:
+			if realErr.Number == mysqlerr.ER_DUP_ENTRY {
+				return base.New(codes.AlreadyExists, "")
+			}
+		}
 		return err
 	}
 	return nil
