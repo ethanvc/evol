@@ -40,7 +40,7 @@ func (repo *AlertRuleRepository) Create(c context.Context, rule *AlertRule) erro
 		switch realErr := err.(type) {
 		case *mysql.MySQLError:
 			if realErr.Number == mysqlerr.ER_DUP_ENTRY {
-				return base.New(codes.AlreadyExists, "")
+				return base.New(codes.AlreadyExists)
 			}
 		}
 		return err

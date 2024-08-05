@@ -1,4 +1,4 @@
-package xlog
+package obs
 
 import (
 	"context"
@@ -32,8 +32,7 @@ func (com *Composer) convertToStatus() {
 		com.s = s
 		return
 	}
-	event := ConvertToEventString(com.originErr.Error(), 80) + ";" + GetStackPosition(2)
-	com.s = base.New(codes.Internal, event).SetMsg(com.originErr.Error())
+	com.s = base.New(codes.Internal).SetMsg(com.originErr.Error())
 }
 
 func (com *Composer) Report() *Composer {

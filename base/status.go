@@ -12,11 +12,19 @@ type Status struct {
 	msg   string
 }
 
-func New(code codes.Code, event string) *Status {
+func New(code codes.Code) *Status {
 	return &Status{
-		code:  code,
-		event: event,
+		code: code,
 	}
+}
+
+func (s *Status) SetEvent(event string) *Status {
+	s.event = event
+	return s
+}
+
+func (s *Status) SetErrAsEvent(err error) *Status {
+	return s
 }
 
 func (s *Status) GetCode() codes.Code {

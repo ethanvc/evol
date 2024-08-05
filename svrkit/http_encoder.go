@@ -3,9 +3,9 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
+	"github.com/ethanvc/evol/obs"
 
 	"github.com/ethanvc/evol/base"
-	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
 )
 
@@ -19,7 +19,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	resp, err := nexter.Next(c, req)
 	httpReq := GetHttpRequestContext(c)
 	if httpReq == nil {
-		return nil, base.New(codes.Internal, "HttpEncoderMustUsedWithHttpProtocol")
+		return nil, base.New(codes.Internal).SetEvent("HttpEncoderMustUsedWithHttpProtocol")
 	}
 	statusErr := e.convertToStatus(c, err)
 	var httpResp HttpResponse
@@ -28,16 +28,16 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	httpResp.Data = resp
 	content, err := json.Marshal(httpResp)
 	if err != nil {
-		return nil, base.New(codes.Internal, "MarshalHttpResponseError")
+		return nil, base.New(codes.Internal)
 	}
 	GetAccessInfo(c).SetResp(content)
 	httpReq.Writer.Header().Set("Content-Type", "application/json")
 	n, err := httpReq.Writer.Write(content)
 	if err != nil {
-		return nil, base.New(codes.Unknown, "WriteHttpResponseError")
+		return nil, base.New(codes.Unknown).SetErrAsEvent(err)
 	}
 	if n != len(content) {
-		return nil, base.New(codes.Unknown, "WriteContentPartial")
+		return nil, base.New(codes.Unknown).SetEvent("ContentLenError")
 	}
 	return resp, nil
 }
@@ -49,7 +49,7 @@ func (e *HttpEncoder) convertToStatus(c context.Context, err error) *base.Status
 	if s, ok := err.(*base.Status); ok {
 		return s
 	}
-	return xlog.New(c, err).Status()
+	return obs.New(c, err).Status()
 }
 
 type HttpResponse struct {

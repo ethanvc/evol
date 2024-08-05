@@ -3,10 +3,10 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
+	"github.com/ethanvc/evol/obs"
 	"io"
 
 	"github.com/ethanvc/evol/base"
-	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
 )
 
@@ -20,7 +20,8 @@ func NewHttpDecoder() *HttpDecoder {
 func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter) (any, error) {
 	httpReq := GetHttpRequestContext(c)
 	if httpReq == nil {
-		return nil, base.New(codes.Internal, "HttpDecoderMustMusedWithHttpProtocol")
+		return nil, base.New(codes.Internal).
+			SetEvent("HttpDecoderMustMusedWithHttpProtocol")
 	}
 	if nexter.Chain().NewReq == nil {
 		return nexter.Next(c, req)
@@ -40,7 +41,7 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 	GetAccessInfo(c).SetReq(content)
 	err = json.Unmarshal(content, req)
 	if err != nil {
-		return nil, xlog.New(c, err).Error()
+		return nil, obs.New(c, err).Error()
 	}
 	return nexter.Next(c, req)
 }
