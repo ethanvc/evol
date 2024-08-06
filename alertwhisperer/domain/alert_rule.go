@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"github.com/VividCortex/mysqlerr"
 	"github.com/ethanvc/evol/base"
 	"github.com/go-sql-driver/mysql"
@@ -40,7 +41,7 @@ func (repo *AlertRuleRepository) Create(c context.Context, rule *AlertRule) erro
 		switch realErr := err.(type) {
 		case *mysql.MySQLError:
 			if realErr.Number == mysqlerr.ER_DUP_ENTRY {
-				return base.New(codes.AlreadyExists)
+				return base.New(codes.AlreadyExists).SetErrEvent(err).SetMsg(err.Error())
 			}
 		}
 		return err
