@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"fmt"
+	"github.com/go-sql-driver/mysql"
 
 	"google.golang.org/grpc/codes"
 )
@@ -26,9 +27,20 @@ func (s *Status) SetEvent(event string) *Status {
 }
 
 func (s *Status) SetErrEvent(err error) *Status {
-	if realErr, ok := err.(*Status); ok {
+	if err == nil {
+		return s
+	}
+
+	switch realErr := err.(type) {
+	case *Status:
 		s.event = realErr.GetEvent()
 		s.rawEvent = realErr.GetRawEvent()
+		return s
+	case *mysql.MySQLError:
+		// message returned by mysql may contain insert data, which is not good as monitor event.
+		s.event = fmt.Sprintf("MySQLErrorNumber_%d_%s;", realErr.Number, realErr.SQLState) + GetStackPosition(1)
+		s.rawEvent = realErr.Error()
+		return s
 	}
 	s.event = ToEventString(err.Error(), 0)
 	s.event += ";" + GetStackPosition(1)
