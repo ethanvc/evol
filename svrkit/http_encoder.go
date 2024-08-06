@@ -3,6 +3,7 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/ethanvc/evol/obs"
 
 	"github.com/ethanvc/evol/base"
@@ -34,7 +35,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	httpReq.Writer.Header().Set("Content-Type", "application/json")
 	n, err := httpReq.Writer.Write(content)
 	if err != nil {
-		return nil, base.New(codes.Unknown).SetErrAsEvent(err)
+		return nil, base.New(codes.Unknown).SetErrEvent(err)
 	}
 	if n != len(content) {
 		return nil, base.New(codes.Unknown).SetEvent("ContentLenError")

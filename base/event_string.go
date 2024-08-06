@@ -1,8 +1,8 @@
-package xlog
+package base
 
 import "bytes"
 
-func ConvertToEventString(s string, maxLen int) string {
+func ToEventString(s string, maxLen int) string {
 	if maxLen == 0 {
 		const defaultLen = 100
 		maxLen = defaultLen
