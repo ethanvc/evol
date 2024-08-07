@@ -29,12 +29,13 @@ func (al *AccessLogger) LogAccess(c context.Context, skip int, err error, req, r
 	lc := GetLogContext(c)
 	now := time.Now()
 	record := slog.NewRecord(lc.GetStartTime(), al.conf.GetLogLevel(err), "REQ_END", base.GetCaller(skip+1))
+	record.Time = now
 	record.Add("method", lc.GetMethod())
+	record.Add("tc_us", now.Sub(now).Microseconds())
+	record.Add(extra...)
 	record.Add("err", err)
 	record.Add("req", req)
 	record.Add("resp", resp)
-	record.Add(extra...)
-	record.Add("tc_us", now.Sub(now).Microseconds())
 	handler := slog.Default().Handler()
 	handler.Handle(c, record)
 }
