@@ -3,6 +3,8 @@ package base
 import (
 	"bytes"
 	"fmt"
+
+	mysqlerrnum "github.com/bombsimon/mysql-error-numbers/v2"
 	"github.com/go-sql-driver/mysql"
 
 	"google.golang.org/grpc/codes"
@@ -38,7 +40,11 @@ func (s *Status) SetErrEvent(err error) *Status {
 		return s
 	case *mysql.MySQLError:
 		// message returned by mysql may contain insert data, which is not good as monitor event.
-		s.event = fmt.Sprintf("MySQLErrorNumber_%d_%s;", realErr.Number, realErr.SQLState) + GetStackPosition(1)
+		errNum := mysqlerrnum.FromNumber(int(realErr.Number))
+		s.event = fmt.Sprintf(
+			"MySQLErrorNumber_%d_%s_%s;%s;", realErr.Number, realErr.SQLState,
+			errNum.String(), errNum.Description(),
+		) + GetStackPosition(1)
 		s.rawEvent = realErr.Error()
 		return s
 	}
