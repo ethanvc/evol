@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/VividCortex/mysqlerr"
 	"github.com/ethanvc/evol/base"
@@ -36,6 +37,9 @@ func NewAlertRuleRepository(db *gorm.DB) *AlertRuleRepository {
 }
 
 func (repo *AlertRuleRepository) Create(c context.Context, rule *AlertRule) error {
+	rule.CreateTime = time.Now().Unix()
+	rule.UpdateTime = rule.CreateTime
+	rule.Version = 1
 	err := repo.db.WithContext(c).Create(rule).Error
 	if err != nil {
 		switch realErr := err.(type) {

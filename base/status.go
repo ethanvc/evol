@@ -42,8 +42,8 @@ func (s *Status) SetErrEvent(err error) *Status {
 		// message returned by mysql may contain insert data, which is not good as monitor event.
 		errNum := mysqlerrnum.FromNumber(int(realErr.Number))
 		s.event = fmt.Sprintf(
-			"MySQLErrorNumber_%d_%s_%s;%s;", realErr.Number, realErr.SQLState,
-			errNum.String(), errNum.Description(),
+			"MySQLErrorNumber_%d_%s_%s,", realErr.Number, realErr.SQLState,
+			errNum.String(),
 		) + GetStackPosition(1)
 		s.rawEvent = realErr.Error()
 		return s

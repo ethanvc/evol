@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/ethanvc/evol/xlog"
 	"net"
 	"os"
 
@@ -18,6 +19,9 @@ import (
 )
 
 func main() {
+	if err := xlog.InitDefaultLogger(); err != nil {
+		panic(err)
+	}
 	app := fx.New(
 		fx.Provide(NewConfig),
 		fx.Provide(NewDatabase),

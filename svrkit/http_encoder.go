@@ -17,12 +17,12 @@ func NewHttpEncoder() *HttpEncoder {
 }
 
 func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any, error) {
-	resp, err := nexter.Next(c, req)
+	resp, businessErr := nexter.Next(c, req)
 	httpReq := GetHttpRequestContext(c)
 	if httpReq == nil {
 		return nil, base.New(codes.Internal).SetEvent("HttpEncoderMustUsedWithHttpProtocol")
 	}
-	statusErr := e.convertToStatus(c, err)
+	statusErr := e.convertToStatus(c, businessErr)
 	var httpResp HttpResponse
 	httpResp.Code = statusErr.GetCode()
 	httpResp.Msg = statusErr.GetMsg()
@@ -31,7 +31,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	if err != nil {
 		return nil, base.New(codes.Internal)
 	}
-	GetAccessInfo(c).SetResp(content)
+	GetAccessInfo(c).SetResp(resp)
 	httpReq.Writer.Header().Set("Content-Type", "application/json")
 	n, err := httpReq.Writer.Write(content)
 	if err != nil {
@@ -40,7 +40,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	if n != len(content) {
 		return nil, base.New(codes.Unknown).SetEvent("ContentLenError")
 	}
-	return resp, nil
+	return resp, businessErr
 }
 
 func (e *HttpEncoder) convertToStatus(c context.Context, err error) *base.Status {
