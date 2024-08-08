@@ -2,10 +2,11 @@ package xlog
 
 import (
 	"context"
-	"github.com/ethanvc/evol/base"
-	"google.golang.org/grpc/codes"
 	"log/slog"
 	"time"
+
+	"github.com/ethanvc/evol/base"
+	"google.golang.org/grpc/codes"
 )
 
 type AccessLogger struct {

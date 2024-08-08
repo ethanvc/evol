@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/ethanvc/evol/obs"
+	"github.com/ethanvc/evol/xlog"
 
 	"github.com/ethanvc/evol/base"
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,8 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	if httpReq == nil {
 		return nil, base.New(codes.Internal).SetEvent("HttpEncoderMustUsedWithHttpProtocol")
 	}
+	accInfo := GetAccessInfo(c)
+	xlog.GetLogContext(c).SetExtra("req_headers", httpReq.Request.Header)
 	statusErr := e.convertToStatus(c, businessErr)
 	var httpResp HttpResponse
 	httpResp.Code = statusErr.GetCode()
@@ -31,7 +34,7 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	if err != nil {
 		return nil, base.New(codes.Internal)
 	}
-	GetAccessInfo(c).SetResp(resp)
+	accInfo.SetResp(resp)
 	httpReq.Writer.Header().Set("Content-Type", "application/json")
 	n, err := httpReq.Writer.Write(content)
 	if err != nil {

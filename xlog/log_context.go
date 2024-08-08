@@ -10,6 +10,7 @@ type LogContext struct {
 	mux       sync.Mutex
 	method    string
 	startTime time.Time
+	extra     map[string]interface{}
 }
 
 type contextKeyLogContext struct{}
@@ -42,5 +43,23 @@ func (lc *LogContext) GetStartTime() time.Time {
 	lc.mux.Lock()
 	defer lc.mux.Unlock()
 	return lc.startTime
-
 }
+
+func (lc *LogContext) SetExtra(key string, val any) {
+	if lc == nil || key == "" || val == nil {
+		return
+	}
+	lc.mux.Lock()
+	defer lc.mux.Unlock()
+
+	const maxExtraLen = 10
+	if len(lc.extra) > maxExtraLen {
+		return
+	}
+	if lc.extra == nil {
+		lc.extra = make(map[string]interface{})
+	}
+	lc.extra[key] = val
+}
+
+func (lc *LogContext)

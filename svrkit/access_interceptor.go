@@ -45,10 +45,9 @@ func GetAccessInfo(c context.Context) *AccessInfo {
 }
 
 type AccessInfo struct {
-	mux   sync.Mutex
-	req   any
-	resp  any
-	extra map[string]any
+	mux  sync.Mutex
+	req  any
+	resp any
 }
 
 func (info *AccessInfo) SetReq(req any) {
@@ -69,23 +68,10 @@ func (info *AccessInfo) SetResp(resp any) {
 	info.resp = resp
 }
 
-func (info *AccessInfo) SetExtra(key string, value any) {
-	if info == nil || key == "" || value == nil {
-		return
-	}
-	info.mux.Lock()
-	defer info.mux.Unlock()
-	const maxAllowedExtra = 10
-	if len(info.extra) > maxAllowedExtra {
-		return
-	}
-	info.extra[key] = value
-}
-
 func GenerateHttpContext(c context.Context) context.Context {
 	httpCtx := GetHttpRequestContext(c)
 	if httpCtx == nil {
 		return nil
 	}
-	return xlog.WithLogContext(c, httpCtx.Pattern)
+	return xlog.WithLogContext(c, httpCtx.Request.Method+" "+httpCtx.Pattern)
 }
