@@ -61,5 +61,3 @@ func (lc *LogContext) SetExtra(key string, val any) {
 	}
 	lc.extra[key] = val
 }
-
-func (lc *LogContext)
