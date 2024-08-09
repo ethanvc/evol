@@ -2,15 +2,16 @@ package xlog
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 )
 
 type LogContext struct {
-	mux       sync.Mutex
-	method    string
-	startTime time.Time
-	extra     map[string]interface{}
+	mux        sync.Mutex
+	method     string
+	startTime  time.Time
+	attributes []slog.Attr
 }
 
 type contextKeyLogContext struct{}
@@ -45,19 +46,25 @@ func (lc *LogContext) GetStartTime() time.Time {
 	return lc.startTime
 }
 
-func (lc *LogContext) SetExtra(key string, val any) {
-	if lc == nil || key == "" || val == nil {
+func (lc *LogContext) SetAttribute(attri slog.Attr) {
+	if lc == nil {
 		return
 	}
 	lc.mux.Lock()
 	defer lc.mux.Unlock()
 
-	const maxExtraLen = 10
-	if len(lc.extra) > maxExtraLen {
+	const maxExtraLen = 100
+	if len(lc.attributes) > maxExtraLen {
 		return
 	}
-	if lc.extra == nil {
-		lc.extra = make(map[string]interface{})
+	lc.attributes = append(lc.attributes, attri)
+}
+
+func (lc *LogContext) TraverseAttributes(f func(attributes []slog.Attr)) {
+	if lc == nil {
+		return
 	}
-	lc.extra[key] = val
+	lc.mux.Lock()
+	defer lc.mux.Unlock()
+	f(lc.attributes)
 }

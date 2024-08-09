@@ -22,5 +22,6 @@
 内因、外果。
 
 和OpenTelemetry的区别：
-高度耦合log、trace、metric，提高易用性。
-降低不必要的抽象级别。
+整合log、trace、metric，提高易用性。
+降低不必要的抽象级别,提高性能。
+扩展也不太行，有一些抽象，导致其性能很差，比如span End的时候，需要做snapshot，必要性不大。
