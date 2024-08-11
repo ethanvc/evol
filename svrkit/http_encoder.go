@@ -3,12 +3,11 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
-
+	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/obs"
 	"github.com/ethanvc/evol/xlog"
-
-	"github.com/ethanvc/evol/base"
 	"google.golang.org/grpc/codes"
+	"log/slog"
 )
 
 type HttpEncoder struct{}
@@ -24,7 +23,6 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 		return nil, base.New(codes.Internal).SetEvent("HttpEncoderMustUsedWithHttpProtocol")
 	}
 	accInfo := GetAccessInfo(c)
-	xlog.GetLogContext(c).SetExtra("req_headers", httpReq.Request.Header)
 	statusErr := e.convertToStatus(c, businessErr)
 	var httpResp HttpResponse
 	httpResp.Code = statusErr.GetCode()
@@ -43,6 +41,9 @@ func (e *HttpEncoder) Intercept(c context.Context, req any, nexter Nexter) (any,
 	if n != len(content) {
 		return nil, base.New(codes.Unknown).SetEvent("ContentLenError")
 	}
+	xlog.GetLogContext(c).SetAttribute(
+		xlog.AttributeKeyHttpResponseHeaders,
+		slog.AnyValue(httpReq.Writer.Header()))
 	return resp, businessErr
 }
 

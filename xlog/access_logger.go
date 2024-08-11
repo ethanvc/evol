@@ -37,6 +37,11 @@ func (al *AccessLogger) LogAccess(c context.Context, skip int, err error, req, r
 	record.Add("err", err)
 	record.Add("req", req)
 	record.Add("resp", resp)
+	lc.TraverseAttributes(func(attris []slog.Attr) {
+		for _, attri := range attris {
+			record.Add(attri)
+		}
+	})
 	handler := slog.Default().Handler()
 	handler.Handle(c, record)
 }

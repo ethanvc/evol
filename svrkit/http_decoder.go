@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/ethanvc/evol/obs"
+	"github.com/ethanvc/evol/xlog"
 	"io"
+	"log/slog"
 
 	"github.com/ethanvc/evol/base"
 	"google.golang.org/grpc/codes"
@@ -44,5 +46,13 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 		GetAccessInfo(c).SetReq(string(content))
 		return nil, obs.New(c, err).Error()
 	}
-	return nexter.Next(c, req)
+	resp, err := nexter.Next(c, req)
+	lc := xlog.GetLogContext(c)
+	lc.SetAttribute(xlog.AttributeKeyHttpRequestPath, slog.StringValue(httpReq.Request.URL.Path))
+	lc.SetAttribute(xlog.AttributeKeyHttpRequestHost,
+		slog.StringValue(httpReq.Request.Host))
+	lc.SetAttribute(
+		xlog.AttributeKeyHttpRequestHeaders,
+		slog.AnyValue(httpReq.Request.Header))
+	return resp, err
 }

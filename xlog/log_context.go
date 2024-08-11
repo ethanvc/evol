@@ -46,8 +46,8 @@ func (lc *LogContext) GetStartTime() time.Time {
 	return lc.startTime
 }
 
-func (lc *LogContext) SetAttribute(attri slog.Attr) {
-	if lc == nil {
+func (lc *LogContext) SetAttribute(key string, val slog.Value) {
+	if lc == nil || key == "" {
 		return
 	}
 	lc.mux.Lock()
@@ -57,7 +57,10 @@ func (lc *LogContext) SetAttribute(attri slog.Attr) {
 	if len(lc.attributes) > maxExtraLen {
 		return
 	}
-	lc.attributes = append(lc.attributes, attri)
+	lc.attributes = append(lc.attributes, slog.Attr{
+		Key:   key,
+		Value: val,
+	})
 }
 
 func (lc *LogContext) TraverseAttributes(f func(attributes []slog.Attr)) {
