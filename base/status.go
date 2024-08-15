@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	mysqlerrnum "github.com/bombsimon/mysql-error-numbers/v2"
+	"github.com/go-json-experiment/json/jsontext"
 	"github.com/go-sql-driver/mysql"
 
 	"google.golang.org/grpc/codes"
@@ -102,6 +103,30 @@ func (s *Status) Error() string {
 		buf.WriteString(s.msg)
 	}
 	return buf.String()
+}
+
+func (s *Status) MarshalJSONV2(encoder *jsontext.Encoder, opts jsontext.Options) error {
+	if s == nil {
+		encoder.WriteToken(jsontext.Null)
+		return nil
+	}
+	encoder.WriteToken(jsontext.ObjectStart)
+	encoder.WriteToken(jsontext.String("code"))
+	encoder.WriteToken(jsontext.Int(int64(s.code)))
+	if s.event != "" {
+		encoder.WriteToken(jsontext.String("event"))
+		encoder.WriteToken(jsontext.String(s.event))
+	}
+	if s.rawEvent != "" {
+		encoder.WriteToken(jsontext.String("raw_event"))
+		encoder.WriteToken(jsontext.String(s.rawEvent))
+	}
+	if s.msg != "" {
+		encoder.WriteToken(jsontext.String("msg"))
+		encoder.WriteToken(jsontext.String(s.msg))
+	}
+	encoder.WriteToken(jsontext.ObjectEnd)
+	return nil
 }
 
 func Code(err error) codes.Code {

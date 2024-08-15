@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/VividCortex/mysqlerr v1.0.0
 	github.com/bombsimon/mysql-error-numbers/v2 v2.0.0-rc2
-	github.com/ethanvc/logjson v0.0.0-20240611131917-693d9ed9359d
+	github.com/ethanvc/logjson v0.0.0-20240815012509-aa539ae4a596
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/stretchr/testify v1.9.0

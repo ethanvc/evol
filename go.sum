@@ -17,6 +17,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/ethanvc/logjson v0.0.0-20240611131917-693d9ed9359d h1:dRxvMY6c0xuIIR/3xfc4KgqnZM77/OaY1HpNnudPzZs=
 github.com/ethanvc/logjson v0.0.0-20240611131917-693d9ed9359d/go.mod h1:FNnTLHisvE3092FenN6P4EV/eMcnmLDiF7zUkr26Sz8=
+github.com/ethanvc/logjson v0.0.0-20240813012152-3db20f86ea30 h1:eLoHct8OYeshVc8ffGsCTE36VjDRheFXb9iY1+gO73Q=
+github.com/ethanvc/logjson v0.0.0-20240813012152-3db20f86ea30/go.mod h1:FNnTLHisvE3092FenN6P4EV/eMcnmLDiF7zUkr26Sz8=
+github.com/ethanvc/logjson v0.0.0-20240815011435-9e1c04830cc4 h1:wBDhAVpjLct2xYuo5rDyvi8OROFRKRs5804UnPWXu2I=
+github.com/ethanvc/logjson v0.0.0-20240815011435-9e1c04830cc4/go.mod h1:FNnTLHisvE3092FenN6P4EV/eMcnmLDiF7zUkr26Sz8=
+github.com/ethanvc/logjson v0.0.0-20240815012509-aa539ae4a596 h1:1B50iIOOX0VeJ39tBP6k1i0LEPpDWW9ezPcQTgXF7RQ=
+github.com/ethanvc/logjson v0.0.0-20240815012509-aa539ae4a596/go.mod h1:FNnTLHisvE3092FenN6P4EV/eMcnmLDiF7zUkr26Sz8=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
