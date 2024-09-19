@@ -23,6 +23,7 @@ func main() {
 		panic(err)
 	}
 	app := fx.New(
+		fx.NopLogger,
 		fx.Provide(NewConfig),
 		fx.Provide(NewDatabase),
 		fx.Provide(controller.NewAlertRuleController),
