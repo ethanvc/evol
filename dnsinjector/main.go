@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -12,38 +13,34 @@ var records = map[string]string{
 	"test.service.": "192.168.0.2",
 }
 
-func parseQuery(m *dns.Msg) {
+func printRequest(m *dns.Msg) {
 	for _, q := range m.Question {
 		switch q.Qtype {
 		case dns.TypeA:
 			log.Printf("Query for %s\n", q.Name)
-			ip := records[q.Name]
-			if ip != "" {
-				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
-				if err == nil {
-					m.Answer = append(m.Answer, rr)
-				}
-			}
 		}
 	}
 }
 
-func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
-	m := new(dns.Msg)
-	m.SetReply(r)
-	m.Compress = false
-
-	switch r.Opcode {
-	case dns.OpcodeQuery:
-		parseQuery(m)
+func handleDnsRequest(w dns.ResponseWriter, req *dns.Msg) {
+	printRequest(req)
+	resp, err := dns.ExchangeContext(context.Background(), req, "8.8.8.8:53")
+	if err != nil {
+		fmt.Printf("err:%s\n", err)
+		return
 	}
-
-	w.WriteMsg(m)
+	err = w.WriteMsg(resp)
+	if err != nil {
+		fmt.Printf("err:%s\n", err)
+		return
+	}
 }
+
+// dig @localhost -p 5999 www.baidu.com
 
 func main() {
 	// attach request handler func
-	dns.HandleFunc("service.", handleDnsRequest)
+	dns.HandleFunc(".", handleDnsRequest)
 
 	// start server
 	port := 5999
