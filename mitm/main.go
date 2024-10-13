@@ -23,7 +23,7 @@ func main() {
 
 func NewDnsServer(lc fx.Lifecycle) (*dns.Server, error) {
 	svr := &dns.Server{
-		Addr:    ":5999",
+		Addr:    ":53",
 		Net:     "udp",
 		Handler: dns.HandlerFunc(ServeDNS),
 	}
