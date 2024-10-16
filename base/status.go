@@ -12,10 +12,13 @@ import (
 )
 
 type Status struct {
-	code     codes.Code
+	// use code to do condition test
+	code codes.Code
+	// event for searching, event cause functionapi return code.
 	event    string
 	rawEvent string
-	msg      string
+	// show msg to api user, let them know what happened
+	msg string
 }
 
 func New(code codes.Code) *Status {

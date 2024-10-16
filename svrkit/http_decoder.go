@@ -3,7 +3,6 @@ package svrkit
 import (
 	"context"
 	"encoding/json"
-	"github.com/ethanvc/evol/obs"
 	"github.com/ethanvc/evol/xlog"
 	"io"
 	"log/slog"
@@ -44,7 +43,7 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 	err = json.Unmarshal(content, req)
 	if err != nil {
 		GetAccessInfo(c).SetReq(string(content))
-		return nil, obs.New(c, err).Error()
+		return nil, base.New(c, err).Error()
 	}
 	resp, err := nexter.Next(c, req)
 	lc := xlog.GetLogContext(c)

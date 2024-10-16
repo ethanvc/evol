@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/xlog"
-	"github.com/miekg/dns"
 	"go.uber.org/fx"
-	"log"
+	"net"
 )
 
 func main() {
@@ -15,55 +14,60 @@ func main() {
 	}
 	app := fx.New(
 		fx.NopLogger,
-		fx.Provide(NewDnsServer),
-		fx.Invoke(func(server *dns.Server) {}),
+		fx.Provide(NewTcpServer),
+		fx.Invoke(func(server *TcpServer) {}),
 	)
 	app.Run()
 }
 
-func NewDnsServer(lc fx.Lifecycle) (*dns.Server, error) {
-	svr := &dns.Server{
-		Addr:    ":53",
-		Net:     "udp",
-		Handler: dns.HandlerFunc(ServeDNS),
-	}
+func NewTcpServer(lc fx.Lifecycle) (*TcpServer, error) {
+	svr := &TcpServer{}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			err := svr.Listen(ctx)
+			if err != nil {
+				return err
+			}
 			go func() {
-				err := svr.ListenAndServe()
-				if err != nil {
-					panic(err)
-				}
+				_ = svr.Serve()
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return svr.ShutdownContext(ctx)
+			return svr.Shutdown()
 		},
 	})
 	return svr, nil
 }
 
-func ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
-	printRequest(req)
-
-	resp, err := dns.ExchangeContext(context.Background(), req, "8.8.8.8:53")
-	if err != nil {
-		fmt.Printf("err:%s\n", err)
-		return
-	}
-	err = w.WriteMsg(resp)
-	if err != nil {
-		fmt.Printf("err:%s\n", err)
-		return
-	}
+type TcpServer struct {
+	ln net.Listener
 }
 
-func printRequest(m *dns.Msg) {
-	for _, q := range m.Question {
-		switch q.Qtype {
-		case dns.TypeA:
-			log.Printf("Query for %s\n", q.Name)
-		}
+func (s *TcpServer) Listen(c context.Context) error {
+	ln, err := net.Listen("tcp", "8081")
+	if err != nil {
+		return base.New(c, err).Error()
 	}
+	s.ln = ln
+	return nil
+}
+
+func (s *TcpServer) Serve() error {
+	for {
+		conn, err := s.ln.Accept()
+		c := context.Background()
+		if err != nil {
+			continue
+		}
+		go s.serveNewConnection(c, conn)
+	}
+	return nil
+}
+
+func (s *TcpServer) Shutdown() error {
+	return nil
+}
+
+func (s *TcpServer) serveNewConnection(c context.Context, conn net.Conn) {
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/ethanvc/evol/base"
-	"github.com/ethanvc/evol/obs"
 	"github.com/ethanvc/evol/xlog"
 	"google.golang.org/grpc/codes"
 	"log/slog"
@@ -54,7 +53,7 @@ func (e *HttpEncoder) convertToStatus(c context.Context, err error) *base.Status
 	if s, ok := err.(*base.Status); ok {
 		return s
 	}
-	return obs.New(c, err).Status()
+	return base.New(c, err).Status()
 }
 
 type HttpResponse struct {

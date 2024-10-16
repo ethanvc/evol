@@ -1,18 +1,17 @@
-package obs
+package base
 
 import (
 	"context"
-	"github.com/ethanvc/evol/base"
 	"google.golang.org/grpc/codes"
 )
 
 type Composer struct {
 	c         context.Context
 	originErr error
-	s         *base.Status
+	s         *Status
 }
 
-func New(c context.Context, err error) *Composer {
+func NewComposer(c context.Context, err error) *Composer {
 	if c == nil {
 		c = context.Background()
 	}
@@ -28,11 +27,11 @@ func (com *Composer) convertToStatus() {
 	if com.originErr == nil {
 		return
 	}
-	if s, ok := com.originErr.(*base.Status); ok {
+	if s, ok := com.originErr.(*Status); ok {
 		com.s = s
 		return
 	}
-	com.s = base.New(codes.Internal).SetMsg(com.originErr.Error())
+	com.s = New(codes.Internal).SetMsg(com.originErr.Error())
 }
 
 func (com *Composer) Report() *Composer {
@@ -46,6 +45,6 @@ func (com *Composer) Error() error {
 	return com.s
 }
 
-func (com *Composer) Status() *base.Status {
+func (com *Composer) Status() *Status {
 	return com.s
 }
