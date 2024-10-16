@@ -14,10 +14,14 @@ import (
 type Status struct {
 	// use code to do condition test
 	code codes.Code
+	// event happened at pc
+	pc uintptr
 	// event for searching, event cause functionapi return code.
-	event    string
-	rawEvent string
+	event string
 	// show msg to api user, let them know what happened
+	// only return this msg to end user when code equal NotFound,
+	// so do not contain sensitive message or unsuitable message
+	// in this field.
 	msg string
 }
 

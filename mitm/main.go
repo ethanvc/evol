@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	if err := xlog.InitDefaultLogger(); err != nil {
-		panic(err)
-	}
+	c := context.Background()
+	err := xlog.InitDefaultLogger()
+	base.PanicIfErr(c, err)
 	app := fx.New(
 		fx.NopLogger,
 		fx.Provide(NewTcpServer),
@@ -25,9 +25,7 @@ func NewTcpServer(lc fx.Lifecycle) (*TcpServer, error) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			err := svr.Listen(ctx)
-			if err != nil {
-				return err
-			}
+			base.PanicIfErr(ctx, err)
 			go func() {
 				_ = svr.Serve()
 			}()
@@ -45,7 +43,7 @@ type TcpServer struct {
 }
 
 func (s *TcpServer) Listen(c context.Context) error {
-	ln, err := net.Listen("tcp", "8081")
+	ln, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		return base.NewComposer(c, err).Error()
 	}
