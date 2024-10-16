@@ -43,7 +43,7 @@ func (decoder *HttpDecoder) Intercept(c context.Context, req any, nexter Nexter)
 	err = json.Unmarshal(content, req)
 	if err != nil {
 		GetAccessInfo(c).SetReq(string(content))
-		return nil, base.New(c, err).Error()
+		return nil, base.NewComposer(c, err).Error()
 	}
 	resp, err := nexter.Next(c, req)
 	lc := xlog.GetLogContext(c)

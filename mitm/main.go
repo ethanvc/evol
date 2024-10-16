@@ -47,7 +47,7 @@ type TcpServer struct {
 func (s *TcpServer) Listen(c context.Context) error {
 	ln, err := net.Listen("tcp", "8081")
 	if err != nil {
-		return base.New(c, err).Error()
+		return base.NewComposer(c, err).Error()
 	}
 	s.ln = ln
 	return nil

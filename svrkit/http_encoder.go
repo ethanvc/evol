@@ -53,7 +53,7 @@ func (e *HttpEncoder) convertToStatus(c context.Context, err error) *base.Status
 	if s, ok := err.(*base.Status); ok {
 		return s
 	}
-	return base.New(c, err).Status()
+	return base.NewComposer(c, err).Status()
 }
 
 type HttpResponse struct {
