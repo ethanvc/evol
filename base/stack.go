@@ -12,10 +12,16 @@ func GetCaller(skip int) uintptr {
 	return pcs[0]
 }
 
-func GetCallerFrame(pc uintptr) runtime.Frame {
+func GetStackFrame(pc uintptr) runtime.Frame {
 	fs := runtime.CallersFrames([]uintptr{pc})
 	frame, _ := fs.Next()
 	return frame
+}
+
+func GetFilePosition(pc uintptr) string {
+	frame := GetStackFrame(pc)
+	filePart := GetFilePathTailPart(frame.File, 2)
+	return fmt.Sprintf("%s:%d", filePart, frame.Line)
 }
 
 func GetFilePathTailPart(filePath string, count int) string {
@@ -33,7 +39,7 @@ func GetFilePathTailPart(filePath string, count int) string {
 
 func GetStackPosition(skip int) string {
 	pc := GetCaller(skip + 1)
-	frame := GetCallerFrame(pc)
+	frame := GetStackFrame(pc)
 	f := GetFilePathTailPart(frame.File, 2)
 	return fmt.Sprintf("%s:%d", f, frame.Line)
 }

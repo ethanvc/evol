@@ -44,7 +44,6 @@ func (s *Status) SetErrEvent(err error) *Status {
 	switch realErr := err.(type) {
 	case *Status:
 		s.event = realErr.GetEvent()
-		s.rawEvent = realErr.GetRawEvent()
 		return s
 	case *mysql.MySQLError:
 		// message returned by mysql may contain insert data, which is not good as monitor event.
@@ -53,12 +52,10 @@ func (s *Status) SetErrEvent(err error) *Status {
 			"MySQLErrorNumber_%d_%s_%s,", realErr.Number, realErr.SQLState,
 			errNum.String(),
 		) + GetStackPosition(1)
-		s.rawEvent = realErr.Error()
 		return s
 	}
 	s.event = ToEventString(err.Error(), 0)
 	s.event += ";" + GetStackPosition(1)
-	s.rawEvent = err.Error()
 	return s
 }
 
@@ -74,13 +71,6 @@ func (s *Status) GetEvent() string {
 		return ""
 	}
 	return s.event
-}
-
-func (s *Status) GetRawEvent() string {
-	if s == nil {
-		return ""
-	}
-	return s.rawEvent
 }
 
 func (s *Status) GetMsg() string {
@@ -123,10 +113,6 @@ func (s *Status) MarshalJSONV2(encoder *jsontext.Encoder, opts jsontext.Options)
 	if s.event != "" {
 		encoder.WriteToken(jsontext.String("event"))
 		encoder.WriteToken(jsontext.String(s.event))
-	}
-	if s.rawEvent != "" {
-		encoder.WriteToken(jsontext.String("raw_event"))
-		encoder.WriteToken(jsontext.String(s.rawEvent))
 	}
 	if s.msg != "" {
 		encoder.WriteToken(jsontext.String("msg"))
