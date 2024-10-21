@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/xlog"
 	"go.uber.org/fx"
+	"log/slog"
 	"net"
+	"net/http"
 )
 
 func main() {
@@ -15,13 +19,13 @@ func main() {
 	app := fx.New(
 		fx.NopLogger,
 		fx.Provide(NewTcpServer),
-		fx.Invoke(func(server *TcpServer) {}),
+		fx.Invoke(func(server *TcpMuxServer) {}),
 	)
 	app.Run()
 }
 
-func NewTcpServer(lc fx.Lifecycle) (*TcpServer, error) {
-	svr := &TcpServer{}
+func NewTcpServer(lc fx.Lifecycle) (*TcpMuxServer, error) {
+	svr := &TcpMuxServer{}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			err := svr.Listen(ctx)
@@ -38,11 +42,11 @@ func NewTcpServer(lc fx.Lifecycle) (*TcpServer, error) {
 	return svr, nil
 }
 
-type TcpServer struct {
+type TcpMuxServer struct {
 	ln net.Listener
 }
 
-func (s *TcpServer) Listen(c context.Context) error {
+func (s *TcpMuxServer) Listen(c context.Context) error {
 	ln, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		return base.ErrWithCaller(err)
@@ -51,21 +55,88 @@ func (s *TcpServer) Listen(c context.Context) error {
 	return nil
 }
 
-func (s *TcpServer) Serve() error {
+func (s *TcpMuxServer) Serve() error {
 	for {
 		conn, err := s.ln.Accept()
-		c := context.Background()
 		if err != nil {
-			continue
+			return base.ErrWithCaller(err)
 		}
-		go s.serveNewConnection(c, conn)
+		c := context.Background()
+		go func() {
+			err := s.serveNewConnection(c, conn)
+			if err != nil {
+				slog.ErrorContext(c, "ServeConnectionError", xlog.Error(err))
+			}
+		}()
+	}
+}
+
+func (s *TcpMuxServer) Shutdown() error {
+	return nil
+}
+
+func (s *TcpMuxServer) serveNewConnection(c context.Context, conn net.Conn) error {
+	defer conn.Close()
+	bufReader := bufio.NewReaderSize(conn, 1024)
+	buf, err := bufReader.Peek(10)
+	if err != nil {
+		return base.ErrWithCaller(err)
+	}
+	switch typ := s.guessProtocolType(buf); typ {
+	case ProtocolTypeHttp:
+	case ProtocolTypeTcp:
+	case ProtocolTypeHttps:
 	}
 	return nil
 }
 
-func (s *TcpServer) Shutdown() error {
-	return nil
+func (s *TcpMuxServer) guessProtocolType(buf []byte) ProtocolType {
+	if bytes.HasPrefix(buf, []byte("GET")) {
+		return ProtocolTypeHttp
+	}
+	return ProtocolTypeTcp
 }
 
-func (s *TcpServer) serveNewConnection(c context.Context, conn net.Conn) {
+type ProtocolType int
+
+const (
+	ProtocolTypeTcp ProtocolType = iota
+	ProtocolTypeHttp
+	ProtocolTypeHttps
+)
+
+type HttpServer struct {
+	svr *http.Server
+}
+
+func NewHttpServer(lc fx.Lifecycle) (*HttpServer, error) {
+	svr := &HttpServer{}
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			err := svr.Listen()
+			if err != nil {
+				return base.ErrWithCaller(err)
+			}
+			go func() {
+				_ = svr.Serve()
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return svr.Shutdown()
+		},
+	})
+	return svr, nil
+}
+
+func (s *HttpServer) Listen() error {
+
+}
+
+func (s *HttpServer) Serve() error {
+
+}
+
+func (s *HttpServer) Shutdown() error {
+
 }
