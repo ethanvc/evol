@@ -1,10 +1,7 @@
 package httpkit
 
-import "context"
-
-func SendRequest(c context.Context, req *HttpRequest) {
-
+func SendRequest(sa *SingleAttempt, req, resp any) error {
+	return DefaultClient.SendRequest(sa, req, resp)
 }
 
-type HttpRequest struct {
-}
+var DefaultClient = &HttpClient{}
