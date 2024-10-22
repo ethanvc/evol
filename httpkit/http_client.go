@@ -40,14 +40,18 @@ func (cli *HttpClient) sendHttpRequest(sa *SingleAttempt, req, resp any) error {
 	if err != nil {
 		return err
 	}
+	return cli.decodeResponse(sa.Response.Header.Get("Content-Type"), sa.RespBody, resp)
+}
+
+func (cli *HttpClient) decodeResponse(contentType string, respBytes []byte, resp any) error {
 	switch realResp := resp.(type) {
 	case *string:
-		*realResp = string(sa.RespBody)
+		*realResp = string(respBytes)
 	case *[]byte:
-		*realResp = sa.RespBody
+		*realResp = respBytes
 	default:
-		if sa.Response.Header.Get("Content-Type") == "" {
-			err := json.Unmarshal(sa.RespBody, resp)
+		if contentType == "" {
+			err := json.Unmarshal(respBytes, resp)
 			if err != nil {
 				return err
 			}
