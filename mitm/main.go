@@ -7,9 +7,12 @@ import (
 	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/xlog"
 	"go.uber.org/fx"
+	"google.golang.org/grpc/codes"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
+	"sync"
 )
 
 func main() {
@@ -19,13 +22,17 @@ func main() {
 	app := fx.New(
 		fx.NopLogger,
 		fx.Provide(NewTcpServer),
+		fx.Provide(NewHttpServer),
 		fx.Invoke(func(server *TcpMuxServer) {}),
 	)
+	base.PanicIfErr(c, app.Err())
 	app.Run()
 }
 
-func NewTcpServer(lc fx.Lifecycle) (*TcpMuxServer, error) {
-	svr := &TcpMuxServer{}
+func NewTcpServer(lc fx.Lifecycle, httpSvr *HttpServer) (*TcpMuxServer, error) {
+	svr := &TcpMuxServer{
+		httpSvr: httpSvr,
+	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			err := svr.Listen(ctx)
@@ -43,7 +50,8 @@ func NewTcpServer(lc fx.Lifecycle) (*TcpMuxServer, error) {
 }
 
 type TcpMuxServer struct {
-	ln net.Listener
+	ln      net.Listener
+	httpSvr *HttpServer
 }
 
 func (s *TcpMuxServer) Listen(c context.Context) error {
@@ -84,9 +92,26 @@ func (s *TcpMuxServer) serveNewConnection(c context.Context, conn net.Conn) erro
 	}
 	switch typ := s.guessProtocolType(buf); typ {
 	case ProtocolTypeHttp:
-	case ProtocolTypeTcp:
-	case ProtocolTypeHttps:
+		return s.serveHttpRequest(conn, bufReader)
+	default:
+		return base.New(codes.Internal).SetEvent("ProtocolTypeError")
 	}
+}
+
+func (s *TcpMuxServer) serveHttpRequest(conn net.Conn, bufReader *bufio.Reader) error {
+	newConn, err := net.DialTCP("tcp", nil, s.httpSvr.GetListenerAddr())
+	if err != nil {
+		return base.ErrWithCaller(err)
+	}
+	defer newConn.Close()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		io.Copy(newConn, bufReader)
+	}()
+	io.Copy(conn, newConn)
+	wg.Wait()
 	return nil
 }
 
@@ -102,11 +127,11 @@ type ProtocolType int
 const (
 	ProtocolTypeTcp ProtocolType = iota
 	ProtocolTypeHttp
-	ProtocolTypeHttps
 )
 
 type HttpServer struct {
 	svr *http.Server
+	ln  net.Listener
 }
 
 func NewHttpServer(lc fx.Lifecycle) (*HttpServer, error) {
@@ -129,14 +154,32 @@ func NewHttpServer(lc fx.Lifecycle) (*HttpServer, error) {
 	return svr, nil
 }
 
-func (s *HttpServer) Listen() error {
+func (s *HttpServer) GetListenerAddr() *net.TCPAddr {
+	return s.ln.Addr().(*net.TCPAddr)
+}
 
+func (s *HttpServer) Listen() error {
+	var err error
+	s.ln, err = net.Listen("tcp", "")
+	if err != nil {
+		return base.ErrWithCaller(err)
+	}
+	return nil
 }
 
 func (s *HttpServer) Serve() error {
-
+	s.svr = &http.Server{
+		Handler: http.HandlerFunc(s.serveHTTP),
+	}
+	return s.svr.Serve(s.ln)
 }
 
 func (s *HttpServer) Shutdown() error {
+	return s.svr.Shutdown(context.Background())
+}
 
+func (s *HttpServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodConnect {
+
+	}
 }
