@@ -9,6 +9,7 @@ type SingleAttempt struct {
 	Request  *http.Request
 	Response *http.Response
 	Err      error
+	RespBody []byte
 }
 
 func NewSingleAttempt(c context.Context, method, url string) *SingleAttempt {
