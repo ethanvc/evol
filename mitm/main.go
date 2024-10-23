@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/ethanvc/evol/base"
 	"github.com/ethanvc/evol/xlog"
 	"go.uber.org/fx"
@@ -130,12 +131,15 @@ const (
 )
 
 type HttpServer struct {
-	svr *http.Server
-	ln  net.Listener
+	svr   *http.Server
+	store *PacketStore
+	ln    net.Listener
 }
 
-func NewHttpServer(lc fx.Lifecycle) (*HttpServer, error) {
-	svr := &HttpServer{}
+func NewHttpServer(lc fx.Lifecycle, store *PacketStore) (*HttpServer, error) {
+	svr := &HttpServer{
+		store: store,
+	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			err := svr.Listen()
@@ -178,8 +182,54 @@ func (s *HttpServer) Shutdown() error {
 	return s.svr.Shutdown(context.Background())
 }
 
-func (s *HttpServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodConnect {
-
+func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
+	newReq, err := s.buildRequest(req)
+	if err != nil {
+		slog.ErrorContext(req.Context(), "BuildRequestError", xlog.Error(err))
+		w.WriteHeader(http.StatusBadGateway)
+		return
 	}
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		slog.ErrorContext(req.Context(), "RemoteServerReturnErr", xlog.Error(err),
+			slog.String("url", req.URL.String()))
+		w.WriteHeader(http.StatusBadGateway)
+		msg := fmt.Sprintf("mitm: send request to remote server error:%s", err.Error())
+		if _, err := w.Write([]byte(msg)); err != nil {
+			slog.ErrorContext(req.Context(), "WriteResponseError", xlog.Error(err))
+		}
+		return
+	}
+	defer resp.Body.Close()
+	for k, vv := range resp.Header {
+		for _, v := range vv {
+			w.Header().Add(k, v)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		slog.ErrorContext(req.Context(), "CopyContentToRespError", xlog.Error(err))
+	}
+}
+
+func (s *HttpServer) buildRequest(req *http.Request) (*http.Request, error) {
+	newReq, err := http.NewRequest(req.Method, req.URL.String(), req.Body)
+	if err != nil {
+		return nil, err
+	}
+	newReq.Header = req.Header
+	return newReq, nil
+}
+
+func (s *HttpServer) requestRemoteServer(req *http.Request) (*http.Response, error) {
+	newReq, err := http.NewRequestWithContext(req.Context(), req.Method, req.URL.String(), req.Body)
+	if err != nil {
+		return nil, err
+	}
+	newReq.Header = req.Header
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
