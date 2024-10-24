@@ -14,3 +14,14 @@ func TestSendRequest(t *testing.T) {
 	err := SendRequest(sa, nil, &respStr)
 	require.NoError(t, err)
 }
+
+func TestJsonResponse(t *testing.T) {
+	type Project struct {
+		Id   int64  `json:"id"`
+		Name string `json:"name"`
+	}
+	sa := NewSingleAttempt(context.Background(), http.MethodGet, "https://gitlab.com/api/v4/projects")
+	var resp []Project
+	err := SendRequest(sa, nil, &resp)
+	require.NoError(t, err)
+}

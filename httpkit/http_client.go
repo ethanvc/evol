@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type HttpClient struct {
@@ -50,7 +51,7 @@ func (cli *HttpClient) decodeResponse(contentType string, respBytes []byte, resp
 	case *[]byte:
 		*realResp = respBytes
 	default:
-		if contentType == "" {
+		if strings.EqualFold(contentType, "application/json") {
 			err := json.Unmarshal(respBytes, resp)
 			if err != nil {
 				return err

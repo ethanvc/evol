@@ -2,18 +2,19 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"github.com/ethanvc/evol/base"
-	"github.com/ethanvc/evol/xlog"
-	"go.uber.org/fx"
-	"google.golang.org/grpc/codes"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"sync"
+
+	"github.com/ethanvc/evol/base"
+	"github.com/ethanvc/evol/xlog"
+	"go.uber.org/fx"
+	"google.golang.org/grpc/codes"
 )
 
 func main() {
@@ -117,10 +118,7 @@ func (s *TcpMuxServer) serveHttpRequest(conn net.Conn, bufReader *bufio.Reader) 
 }
 
 func (s *TcpMuxServer) guessProtocolType(buf []byte) ProtocolType {
-	if bytes.HasPrefix(buf, []byte("GET")) {
-		return ProtocolTypeHttp
-	}
-	return ProtocolTypeTcp
+	return ProtocolTypeHttp
 }
 
 type ProtocolType int
@@ -182,34 +180,43 @@ func (s *HttpServer) Shutdown() error {
 	return s.svr.Shutdown(context.Background())
 }
 
+func (s *HttpServer) appendToStore(err error, req *http.Request, resp *http.Response) {
+
+}
+
 func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
-	newReq, err := s.buildRequest(req)
+	newReq, newResp, err := s.forwardToRemote(req)
 	if err != nil {
-		slog.ErrorContext(req.Context(), "BuildRequestError", xlog.Error(err))
 		w.WriteHeader(http.StatusBadGateway)
-		return
-	}
-	resp, err := http.DefaultClient.Do(newReq)
-	if err != nil {
-		slog.ErrorContext(req.Context(), "RemoteServerReturnErr", xlog.Error(err),
-			slog.String("url", req.URL.String()))
-		w.WriteHeader(http.StatusBadGateway)
-		msg := fmt.Sprintf("mitm: send request to remote server error:%s", err.Error())
+		msg := fmt.Sprintf("mitm: forward error(%s)", err.Error())
 		if _, err := w.Write([]byte(msg)); err != nil {
-			slog.ErrorContext(req.Context(), "WriteResponseError", xlog.Error(err))
+			slog.ErrorContext(req.Context(), "ForwardError", xlog.Error(err))
 		}
+		s.appendToStore(errors.New(msg), newReq, newResp)
 		return
 	}
-	defer resp.Body.Close()
-	for k, vv := range resp.Header {
+	for k, vv := range newResp.Header {
 		for _, v := range vv {
 			w.Header().Add(k, v)
 		}
 	}
-	w.WriteHeader(resp.StatusCode)
-	if _, err := io.Copy(w, resp.Body); err != nil {
+	w.WriteHeader(newResp.StatusCode)
+	if _, err := io.Copy(w, newResp.Body); err != nil {
 		slog.ErrorContext(req.Context(), "CopyContentToRespError", xlog.Error(err))
 	}
+}
+
+func (s *HttpServer) forwardToRemote(req *http.Request) (*http.Request, *http.Response, error) {
+	newReq, err := http.NewRequestWithContext(req.Context(), req.Method, req.URL.String(), req.Body)
+	if err != nil {
+		return nil, nil, err
+	}
+	newReq.Header = req.Header
+	newResp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return newReq, nil, err
+	}
+	return newReq, newResp, nil
 }
 
 func (s *HttpServer) buildRequest(req *http.Request) (*http.Request, error) {
