@@ -48,19 +48,20 @@ func (cli *HttpClient) decodeResponse(contentType string, respBytes []byte, resp
 	switch realResp := resp.(type) {
 	case *string:
 		*realResp = string(respBytes)
+		return nil
 	case *[]byte:
 		*realResp = respBytes
-	default:
-		if strings.EqualFold(contentType, "application/json") {
-			err := json.Unmarshal(respBytes, resp)
-			if err != nil {
-				return err
-			}
-		} else {
-			return errors.New("RespTypeNotSupport")
-		}
+		return nil
 	}
-	return nil
+	contentType = strings.ToLower(contentType)
+	if strings.HasPrefix(contentType, "application/json") {
+		err := json.Unmarshal(respBytes, resp)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return errors.New("RespTypeNotSupport")
 }
 
 type Invoker struct {
