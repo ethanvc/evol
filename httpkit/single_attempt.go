@@ -6,10 +6,12 @@ import (
 )
 
 type SingleAttempt struct {
-	Request  *http.Request
-	Response *http.Response
-	Err      error
-	RespBody []byte
+	Request       *http.Request
+	Response      *http.Response
+	Err           error
+	ReqBody       []byte
+	RespBody      []byte
+	UpdateContext bool
 }
 
 func NewSingleAttempt(c context.Context, method, url string) *SingleAttempt {
