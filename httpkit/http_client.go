@@ -27,14 +27,14 @@ func (cli *HttpClient) Clone() *HttpClient {
 	return newCli
 }
 
-func (cli *HttpClient) SendRequest(c context.Context, sa *SingleAttempt, req, resp any) error {
+func (cli *HttpClient) SendRequest(sa *SingleAttempt, req, resp any) error {
 	if sa.Err != nil {
 		return sa.Err
 	}
 	invoker := Invoker{
 		cli: cli,
 	}
-	return invoker.Invoke(c, sa, req, resp)
+	return invoker.Invoke(sa.Request.Context(), sa, req, resp)
 }
 
 func (cli *HttpClient) sendHttpRequestAfterAllInterceptors(c context.Context, sa *SingleAttempt, req, resp any) error {
