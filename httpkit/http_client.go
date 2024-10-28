@@ -6,15 +6,25 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 )
 
 type HttpClient struct {
-	interceptors     []InterceptorFunc
 	PreInterceptors  []InterceptorFunc
 	PostInterceptors []InterceptorFunc
 	EncodeRequest    func(c context.Context, sa *SingleAttempt, req any) error
 	DecodeResponse   func(c context.Context, sa *SingleAttempt, resp any) error
+}
+
+func (cli *HttpClient) Close() *HttpClient {
+	newCli := &HttpClient{
+		PreInterceptors:  slices.Clone(cli.PreInterceptors),
+		PostInterceptors: slices.Clone(cli.PostInterceptors),
+		EncodeRequest:    cli.EncodeRequest,
+		DecodeResponse:   cli.DecodeResponse,
+	}
+	return newCli
 }
 
 func (cli *HttpClient) SendRequest(c context.Context, sa *SingleAttempt, req, resp any) error {
@@ -55,6 +65,9 @@ func (cli *HttpClient) sendHttpRequestAfterAllInterceptors(c context.Context, sa
 }
 
 func (cli *HttpClient) encodeRequest(c context.Context, sa *SingleAttempt, req any) error {
+	if sa.Request.Body != nil {
+		return nil
+	}
 	if cli.EncodeRequest != nil {
 		return cli.EncodeRequest(c, sa, req)
 	}
