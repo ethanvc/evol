@@ -17,7 +17,7 @@ type HttpClient struct {
 	DecodeResponse   func(c context.Context, sa *SingleAttempt, resp any) error
 }
 
-func (cli *HttpClient) Close() *HttpClient {
+func (cli *HttpClient) Clone() *HttpClient {
 	newCli := &HttpClient{
 		PreInterceptors:  slices.Clone(cli.PreInterceptors),
 		PostInterceptors: slices.Clone(cli.PostInterceptors),
