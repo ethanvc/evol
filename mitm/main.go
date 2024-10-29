@@ -5,16 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethanvc/evol/base"
+	"github.com/ethanvc/evol/mitm/mitm"
+	"github.com/ethanvc/evol/xlog"
+	"go.uber.org/fx"
+	"google.golang.org/grpc/codes"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
-	"sync"
-
-	"github.com/ethanvc/evol/base"
-	"github.com/ethanvc/evol/xlog"
-	"go.uber.org/fx"
-	"google.golang.org/grpc/codes"
 )
 
 func main() {
@@ -24,6 +23,7 @@ func main() {
 	app := fx.New(
 		fx.NopLogger,
 		fx.Provide(NewTcpServer),
+		fx.Provide(mitm.NewPacketStore),
 		fx.Provide(NewHttpServer),
 		fx.Invoke(func(server *TcpMuxServer) {}),
 	)
@@ -86,35 +86,20 @@ func (s *TcpMuxServer) Shutdown() error {
 }
 
 func (s *TcpMuxServer) serveNewConnection(c context.Context, conn net.Conn) error {
-	defer conn.Close()
 	bufReader := bufio.NewReaderSize(conn, 1024)
 	buf, err := bufReader.Peek(10)
 	if err != nil {
+		conn.Close()
 		return base.ErrWithCaller(err)
 	}
 	switch typ := s.guessProtocolType(buf); typ {
 	case ProtocolTypeHttp:
-		return s.serveHttpRequest(conn, bufReader)
+		s.httpSvr.AddConn(mitm.NewBufferIoConn(conn, bufReader))
+		return nil
 	default:
+		conn.Close()
 		return base.New(codes.Internal).SetEvent("ProtocolTypeError")
 	}
-}
-
-func (s *TcpMuxServer) serveHttpRequest(conn net.Conn, bufReader *bufio.Reader) error {
-	newConn, err := net.DialTCP("tcp", nil, s.httpSvr.GetListenerAddr())
-	if err != nil {
-		return base.ErrWithCaller(err)
-	}
-	defer newConn.Close()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		io.Copy(newConn, bufReader)
-	}()
-	io.Copy(conn, newConn)
-	wg.Wait()
-	return nil
 }
 
 func (s *TcpMuxServer) guessProtocolType(buf []byte) ProtocolType {
@@ -130,11 +115,11 @@ const (
 
 type HttpServer struct {
 	svr   *http.Server
-	store *PacketStore
-	ln    net.Listener
+	store *mitm.PacketStore
+	ln    *mitm.ConnListener
 }
 
-func NewHttpServer(lc fx.Lifecycle, store *PacketStore) (*HttpServer, error) {
+func NewHttpServer(lc fx.Lifecycle, store *mitm.PacketStore) (*HttpServer, error) {
 	svr := &HttpServer{
 		store: store,
 	}
@@ -156,16 +141,16 @@ func NewHttpServer(lc fx.Lifecycle, store *PacketStore) (*HttpServer, error) {
 	return svr, nil
 }
 
+func (s *HttpServer) AddConn(conn net.Conn) {
+	s.ln.Add(conn)
+}
+
 func (s *HttpServer) GetListenerAddr() *net.TCPAddr {
 	return s.ln.Addr().(*net.TCPAddr)
 }
 
 func (s *HttpServer) Listen() error {
-	var err error
-	s.ln, err = net.Listen("tcp", "")
-	if err != nil {
-		return base.ErrWithCaller(err)
-	}
+	s.ln = mitm.NewConnListener()
 	return nil
 }
 
