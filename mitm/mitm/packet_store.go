@@ -15,6 +15,7 @@ func NewPacketStore() *PacketStore {
 	s := &PacketStore{
 		ch: make(chan *HttpPacket, 1000),
 	}
+	go s.consumePacket()
 	return s
 }
 
@@ -44,6 +45,15 @@ type HttpReqPacket struct {
 	Body       []byte
 }
 
+func (packet *HttpReqPacket) Build(req *http.Request) {
+	packet.Method = req.Method
+	packet.Url = req.URL
+	packet.Proto = req.Proto
+	packet.ProtoMajor = req.ProtoMajor
+	packet.ProtoMinor = req.ProtoMinor
+	packet.Header = req.Header
+}
+
 type HttpRespPacket struct {
 	Status     string
 	StatusCode int
@@ -52,4 +62,13 @@ type HttpRespPacket struct {
 	ProtoMinor int
 	Header     http.Header
 	Body       []byte
+}
+
+func (packet *HttpRespPacket) Build(resp *http.Response) {
+	packet.Status = resp.Status
+	packet.StatusCode = resp.StatusCode
+	packet.Proto = resp.Proto
+	packet.ProtoMajor = resp.ProtoMajor
+	packet.ProtoMinor = resp.ProtoMinor
+	packet.Header = resp.Header
 }

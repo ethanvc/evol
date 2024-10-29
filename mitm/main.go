@@ -166,7 +166,11 @@ func (s *HttpServer) Shutdown() error {
 }
 
 func (s *HttpServer) appendToStore(err error, req *http.Request, resp *http.Response) {
-
+	packet := &mitm.HttpPacket{}
+	packet.Req.Build(req)
+	packet.Resp.Build(resp)
+	packet.Err = err
+	s.store.AppendHttpPacket(packet)
 }
 
 func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
@@ -189,6 +193,7 @@ func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	if _, err := io.Copy(w, newResp.Body); err != nil {
 		slog.ErrorContext(req.Context(), "CopyContentToRespError", xlog.Error(err))
 	}
+	s.appendToStore(nil, newReq, newResp)
 }
 
 func (s *HttpServer) forwardToRemote(req *http.Request) (*http.Request, *http.Response, error) {
