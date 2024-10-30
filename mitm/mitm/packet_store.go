@@ -2,6 +2,7 @@ package mitm
 
 import (
 	"context"
+	"github.com/ethanvc/evol/xlog"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -25,7 +26,10 @@ func (store *PacketStore) AppendHttpPacket(packet *HttpPacket) {
 
 func (store *PacketStore) consumePacket() {
 	for packet := range store.ch {
-		slog.InfoContext(context.Background(), "REQ_END", slog.String("url", packet.Req.Url.String()))
+		slog.InfoContext(context.Background(), "REQ_END",
+			xlog.Error(packet.Err),
+			slog.String("url", packet.Req.Url.String()),
+		)
 	}
 }
 
@@ -65,6 +69,9 @@ type HttpRespPacket struct {
 }
 
 func (packet *HttpRespPacket) Build(resp *http.Response) {
+	if resp == nil {
+		return
+	}
 	packet.Status = resp.Status
 	packet.StatusCode = resp.StatusCode
 	packet.Proto = resp.Proto

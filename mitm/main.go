@@ -174,6 +174,16 @@ func (s *HttpServer) appendToStore(err error, req *http.Request, resp *http.Resp
 }
 
 func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
+	err := s.serveHTTPInternal(w, req)
+	if err != nil {
+		slog.ErrorContext(req.Context(), "ServeError", xlog.Error(err))
+	}
+}
+
+func (s *HttpServer) serveHTTPInternal(w http.ResponseWriter, req *http.Request) error {
+	if req.Method == http.MethodConnect {
+		return s.serveConnect(w, req)
+	}
 	newReq, newResp, err := s.forwardToRemote(req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
@@ -182,7 +192,7 @@ func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
 			slog.ErrorContext(req.Context(), "ForwardError", xlog.Error(err))
 		}
 		s.appendToStore(errors.New(msg), newReq, newResp)
-		return
+		return nil
 	}
 	for k, vv := range newResp.Header {
 		for _, v := range vv {
@@ -194,6 +204,20 @@ func (s *HttpServer) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		slog.ErrorContext(req.Context(), "CopyContentToRespError", xlog.Error(err))
 	}
 	s.appendToStore(nil, newReq, newResp)
+	return nil
+}
+
+func (s *HttpServer) serveConnect(w http.ResponseWriter, req *http.Request) error {
+	hij, ok := w.(http.Hijacker)
+	if !ok {
+		return base.New(codes.Internal).SetEvent("ConvertToHijackerFailed")
+	}
+	conn, _, err := hij.Hijack()
+	if err != nil {
+		return base.ErrWithCaller(err)
+	}
+	_ = conn
+	return nil
 }
 
 func (s *HttpServer) forwardToRemote(req *http.Request) (*http.Request, *http.Response, error) {
