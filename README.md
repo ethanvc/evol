@@ -40,3 +40,6 @@
 ## httpkit要解决的问题
 1. 统一打印日志，上报监控。需要能够定制method。http请求的method建议是method/path。
 2. 可以定制编解码器，并且互不干扰。比如，不要通过域名映射解码器的方式，他们互相影响，不太好，带来额外复杂度。
+
+# 参考资料
+https://mp.weixin.qq.com/s/P0mbc0rqt6vYhK3YeTDBrQ

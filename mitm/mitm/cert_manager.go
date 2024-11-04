@@ -3,6 +3,7 @@ package mitm
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"github.com/ethanvc/evol/base"
@@ -15,6 +16,10 @@ type CertManager struct {
 
 func NewCertManager() *CertManager {
 	return &CertManager{}
+}
+
+func (mgr *CertManager) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return nil, nil
 }
 
 func (cm *CertManager) CreateRootCert() error {

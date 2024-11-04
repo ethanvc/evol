@@ -22,18 +22,21 @@ func main() {
 	base.PanicIfErr(c, err)
 	app := fx.New(
 		fx.NopLogger,
-		fx.Provide(NewTcpServer),
+		fx.Provide(mitm.NewCertManager),
+		fx.Provide(NewTcpMuxServer),
 		fx.Provide(mitm.NewPacketStore),
 		fx.Provide(NewHttpServer),
+		fx.Provide(NewHttpsServer),
 		fx.Invoke(func(server *TcpMuxServer) {}),
 	)
 	base.PanicIfErr(c, app.Err())
 	app.Run()
 }
 
-func NewTcpServer(lc fx.Lifecycle, httpSvr *HttpServer) (*TcpMuxServer, error) {
+func NewTcpMuxServer(lc fx.Lifecycle, httpSvr *HttpServer, httpsSvr *mitm.HttpsServer) (*TcpMuxServer, error) {
 	svr := &TcpMuxServer{
-		httpSvr: httpSvr,
+		httpSvr:  httpSvr,
+		httpsSvr: httpsSvr,
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -52,8 +55,9 @@ func NewTcpServer(lc fx.Lifecycle, httpSvr *HttpServer) (*TcpMuxServer, error) {
 }
 
 type TcpMuxServer struct {
-	ln      net.Listener
-	httpSvr *HttpServer
+	ln       net.Listener
+	httpSvr  *HttpServer
+	httpsSvr *mitm.HttpsServer
 }
 
 func (s *TcpMuxServer) Listen(c context.Context) error {
@@ -114,14 +118,16 @@ const (
 )
 
 type HttpServer struct {
-	svr   *http.Server
-	store *mitm.PacketStore
-	ln    *mitm.ConnListener
+	svr      *http.Server
+	store    *mitm.PacketStore
+	ln       *mitm.ConnListener
+	httpsSvr *mitm.HttpsServer
 }
 
-func NewHttpServer(lc fx.Lifecycle, store *mitm.PacketStore) (*HttpServer, error) {
+func NewHttpServer(lc fx.Lifecycle, store *mitm.PacketStore, httpsSvr *mitm.HttpsServer) (*HttpServer, error) {
 	svr := &HttpServer{
-		store: store,
+		store:    store,
+		httpsSvr: httpsSvr,
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -216,7 +222,8 @@ func (s *HttpServer) serveConnect(w http.ResponseWriter, req *http.Request) erro
 	if err != nil {
 		return base.ErrWithCaller(err)
 	}
-	_ = conn
+	conn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
+	s.httpsSvr.AddConn(conn)
 	return nil
 }
 
@@ -253,4 +260,24 @@ func (s *HttpServer) requestRemoteServer(req *http.Request) (*http.Response, err
 		return nil, err
 	}
 	return resp, nil
+}
+
+func NewHttpsServer(lc fx.Lifecycle, certMgr *mitm.CertManager) *mitm.HttpsServer {
+	svr := mitm.NewHttpsServer(certMgr)
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			err := svr.Listen()
+			if err != nil {
+				return base.ErrWithCaller(err)
+			}
+			go func() {
+				_ = svr.Serve()
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return svr.Shutdown()
+		},
+	})
+	return svr
 }
