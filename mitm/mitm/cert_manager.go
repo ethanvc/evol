@@ -15,7 +15,8 @@ import (
 )
 
 type CertManager struct {
-	rootKey *rsa.PrivateKey
+	rootKey  *rsa.PrivateKey
+	rootCert *x509.Certificate
 }
 
 func NewCertManager() (*CertManager, error) {
@@ -60,6 +61,7 @@ func (mgr *CertManager) CreateRootCert() error {
 	if err != nil {
 		return base.ErrWithCaller(err)
 	}
+	mgr.rootCert = &caTemplate
 	content := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCert})
 	err = os.WriteFile("root.crt.pem", content, 0600)
 	if err != nil {
@@ -93,7 +95,7 @@ func (mgr *CertManager) CreateDomainCert(domain string) (*tls.Certificate, error
 		SubjectKeyId: []byte{1, 2, 3, 4},
 	}
 
-	caCert, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caKey.PublicKey, mgr.rootKey)
+	caCert, err := x509.CreateCertificate(rand.Reader, &caTemplate, mgr.rootCert, &caKey.PublicKey, mgr.rootKey)
 	if err != nil {
 		return nil, base.ErrWithCaller(err)
 	}
