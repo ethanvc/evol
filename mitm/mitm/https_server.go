@@ -3,8 +3,6 @@ package mitm
 import (
 	"context"
 	"crypto/tls"
-	"github.com/ethanvc/evol/xlog"
-	"log/slog"
 	"net"
 	"net/http"
 )
@@ -13,12 +11,14 @@ type HttpsServer struct {
 	certMgr *CertManager
 	ln      *ConnListener
 	tlsLn   net.Listener
+	handler *HttpHandler
 	svr     *http.Server
 }
 
-func NewHttpsServer(certMgr *CertManager) *HttpsServer {
+func NewHttpsServer(certMgr *CertManager, handler *HttpHandler) *HttpsServer {
 	return &HttpsServer{
 		certMgr: certMgr,
+		handler: handler,
 	}
 }
 
@@ -41,17 +41,7 @@ func (s *HttpsServer) Shutdown() error {
 
 func (s *HttpsServer) Serve() error {
 	s.svr = &http.Server{
-		Handler: http.HandlerFunc(s.serveHTTP),
+		Handler: http.HandlerFunc(s.handler.ServeHTTP),
 	}
 	return s.svr.Serve(s.tlsLn)
-}
-
-func (s *HttpsServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := s.serveHTTPInternal(w, r); err != nil {
-		slog.ErrorContext(r.Context(), "serveHTTPInternalError", xlog.Error(err))
-	}
-}
-
-func (s *HttpsServer) serveHTTPInternal(w http.ResponseWriter, r *http.Request) error {
-	return nil
 }

@@ -31,8 +31,8 @@ func main() {
 	app.Run()
 }
 
-func NewHttpsServer(lc fx.Lifecycle, certMgr *mitm.CertManager) *mitm.HttpsServer {
-	svr := mitm.NewHttpsServer(certMgr)
+func NewHttpsServer(lc fx.Lifecycle, certMgr *mitm.CertManager, handler *mitm.HttpHandler) *mitm.HttpsServer {
+	svr := mitm.NewHttpsServer(certMgr, handler)
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			err := svr.Listen()

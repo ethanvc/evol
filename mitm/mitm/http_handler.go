@@ -87,6 +87,14 @@ func (h *HttpHandler) forwardToRemote(req *http.Request) (*http.Request, *http.R
 	if err != nil {
 		return nil, nil, err
 	}
+	if newReq.URL.Host == "" {
+		if req.TLS != nil {
+			newReq.URL.Scheme = "https"
+		} else {
+			newReq.URL.Scheme = "http"
+		}
+		newReq.URL.Host = req.Host
+	}
 	newReq.Header = req.Header
 	newResp, err := http.DefaultClient.Do(newReq)
 	if err != nil {
