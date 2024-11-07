@@ -24,7 +24,17 @@ func NewHttpHandler(store *PacketStore) *HttpHandler {
 	}
 }
 
+func (h *HttpHandler) SetHttpSvr(httpSvr *HttpServer, httpsSvr *HttpsServer) {
+	h.httpSvr = httpSvr
+	h.httpsSvr = httpsSvr
+}
+
 func (h *HttpHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if h.httpSvr == nil || h.httpsSvr == nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Write([]byte("initializing..."))
+		return
+	}
 	err := h.serveHTTPInternal(w, req)
 	if err != nil {
 		slog.ErrorContext(req.Context(), "ServeError", xlog.Error(err))
