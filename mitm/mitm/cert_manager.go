@@ -52,7 +52,7 @@ func (mgr *CertManager) CreateRootCert() error {
 	caTemplate := x509.Certificate{
 		SerialNumber: mgr.generateSerialNumber(),
 		Subject: pkix.Name{
-			Organization: []string{"Mitm CA"},
+			Organization: []string{"Mitm CA " + time.Now().Format(time.RFC3339Nano)},
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(time.Hour * 24 * 365 * 10),
