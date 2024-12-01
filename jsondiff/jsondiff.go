@@ -1,7 +1,9 @@
 package jsondiff
 
 import (
+	"bytes"
 	"errors"
+	"github.com/ethanvc/evol/base"
 	"reflect"
 	"slices"
 	"sort"
@@ -22,10 +24,10 @@ func (jd *JsonDiffer) JsonDiffStr(src, dst string) ([]Change, error) {
 
 func (jd *JsonDiffer) JsonDiff(src, dst []byte) ([]Change, error) {
 	var srcAny, dstAny any
-	if err := json.Unmarshal(src, &srcAny); err != nil {
+	if err := unmarshal(src, &srcAny); err != nil {
 		return nil, errors.Join(errors.New("src json unmarshal fail"), err)
 	}
-	if err := json.Unmarshal(dst, &dstAny); err != nil {
+	if err := unmarshal(dst, &dstAny); err != nil {
 		return nil, errors.Join(errors.New("dst json unmarshal fail"), err)
 	}
 	jd.changes = nil
@@ -54,15 +56,35 @@ func (jd *JsonDiffer) diff(p []string, src any, dst any) {
 		jd.diffMap(p, realSrc, dst.(map[string]any))
 	case string:
 		jd.diffStr(p, src.(string), dst.(string))
+	case json.Number:
+		jd.diffNumber(p, src.(json.Number), dst.(json.Number))
 	default:
 		panic("type not support")
 	}
+}
+
+func (jd *JsonDiffer) diffNumber(p []string, src, dst json.Number) {
+	if string(src) == string(dst) {
+		return
+	}
+	jd.addChange(ChangeTypeUpdate, p, src, dst)
 }
 
 func (jd *JsonDiffer) diffStr(p []string, src, dst string) {
 	if src == dst {
 		return
 	}
+	var srcAny, dstAny any
+	if err := unmarshal([]byte(src), &srcAny); err == nil {
+		if err := unmarshal([]byte(dst), &dstAny); err == nil {
+			if base.In(reflect.TypeOf(srcAny).Kind(), reflect.Map, reflect.Array) &&
+				base.In(reflect.TypeOf(dstAny).Kind(), reflect.Map, reflect.Array) {
+				jd.diff(p, srcAny, dstAny)
+				return
+			}
+		}
+	}
+
 	jd.addChange(ChangeTypeUpdate, p, src, dst)
 }
 
@@ -118,4 +140,11 @@ type Change struct {
 	JsonPath   []string   `json:"json_path"`
 	From       any        `json:"from"`
 	To         any        `json:"to"`
+}
+
+func unmarshal(data []byte, v any) error {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	err := decoder.Decode(v)
+	return err
 }
