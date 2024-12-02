@@ -2,13 +2,14 @@ package jsondiff
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
-	"github.com/ethanvc/evol/base"
 	"reflect"
 	"slices"
 	"sort"
+
+	"github.com/ethanvc/evol/base"
 )
-import "encoding/json"
 
 type JsonDiffer struct {
 	changes []Change
@@ -116,11 +117,11 @@ func (jd *JsonDiffer) diffMap(p []string, src, dst map[string]any) {
 		newPath := append(p, key)
 		if !ok1 {
 			jd.addChange(ChangeTypeCreate, newPath, nil, dstVal)
-			return
+			continue
 		}
 		if !ok2 {
 			jd.addChange(ChangeTypeDelete, newPath, srcVal, nil)
-			return
+			continue
 		}
 		jd.diff(newPath, srcVal, dstVal)
 	}
