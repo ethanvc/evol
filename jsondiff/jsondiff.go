@@ -13,7 +13,9 @@ import (
 )
 
 type JsonDiffer struct {
-	changes []Change
+	MissingEqualZero bool
+	NullEqualZero    bool
+	changes          []Change
 }
 
 func NewJsonDiffer() *JsonDiffer {
@@ -57,12 +59,18 @@ func (jd *JsonDiffer) diff(p []string, src any, dst any) {
 	case map[string]any:
 		jd.diffMap(p, realSrc, dst.(map[string]any))
 	case string:
-		jd.diffStr(p, src.(string), dst.(string))
+		jd.diffStr(p, realSrc, dst.(string))
 	case json.Number:
-		jd.diffNumber(p, src.(json.Number), dst.(json.Number))
+		jd.diffNumber(p, realSrc, dst.(json.Number))
+	case []any:
+		jd.diffArray(p, realSrc, dst.([]any))
 	default:
 		panic("type not support")
 	}
+}
+
+func (jd *JsonDiffer) diffArray(p []string, src, dst []any) {
+
 }
 
 func (jd *JsonDiffer) diffNumber(p []string, src, dst json.Number) {
