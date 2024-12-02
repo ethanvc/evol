@@ -2,8 +2,9 @@ package jsondiff
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestJsonDiffer_JsonDiff(t *testing.T) {
@@ -17,4 +18,14 @@ func TestJsonDiffer_JsonDiff(t *testing.T) {
 func requireNoChange(t *testing.T, err error, changes []Change) {
 	require.NoError(t, err)
 	require.Zero(t, len(changes))
+}
+
+func Test_ChangeType(t *testing.T) {
+	buf, err := json.Marshal(ChangeTypeCreate)
+	require.NoError(t, err)
+	require.Equal(t, `"ChangeTypeCreate"`, string(buf))
+	ct := ChangeTypeNotSet
+	err = json.Unmarshal([]byte(`"ChangeTypeCreate"`), &ct)
+	require.NoError(t, err)
+	require.Equal(t, ChangeTypeCreate, ct)
 }

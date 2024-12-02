@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"slices"
 	"sort"
@@ -130,11 +131,51 @@ func (jd *JsonDiffer) diffMap(p []string, src, dst map[string]any) {
 type ChangeType int
 
 const (
-	ChangeTypeCreate ChangeType = iota
+	ChangeTypeNotSet ChangeType = iota
+	ChangeTypeCreate
 	ChangeTypeUpdate
 	ChangeTypeDelete
 	ChangeTypeSchema
 )
+
+func (ct ChangeType) String() string {
+	switch ct {
+	case ChangeTypeNotSet:
+		return "ChangeTypeNotSet"
+	case ChangeTypeCreate:
+		return "ChangeTypeCreate"
+	case ChangeTypeUpdate:
+		return "ChangeTypeUpdate"
+	case ChangeTypeDelete:
+		return "ChangeTypeDelete"
+	case ChangeTypeSchema:
+		return "ChangeTypeSchema"
+	default:
+		return fmt.Sprintf("ChangeTypeUnknown_%d", ct)
+	}
+}
+
+func (ct ChangeType) MarshalText() ([]byte, error) {
+	return []byte(ct.String()), nil
+}
+
+func (ct *ChangeType) UnmarshalText(text []byte) error {
+	switch string(text) {
+	case ChangeTypeNotSet.String():
+		*ct = ChangeTypeNotSet
+	case ChangeTypeCreate.String():
+		*ct = ChangeTypeCreate
+	case ChangeTypeUpdate.String():
+		*ct = ChangeTypeUpdate
+	case ChangeTypeDelete.String():
+		*ct = ChangeTypeDelete
+	case ChangeTypeSchema.String():
+		*ct = ChangeTypeSchema
+	default:
+		return errors.New(fmt.Sprintf("unknown change type(%s)", text))
+	}
+	return nil
+}
 
 type Change struct {
 	ChangeType ChangeType `json:"change_type"`
